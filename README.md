@@ -1,46 +1,46 @@
-# pdgeek.io — VMware VVF/VCF Reference Architecture
+# pdgeek.io — VMware Day 2 Operations
 
-> **Open-source IaC for VMware on PowerEdge + PowerStore**
-> Self-service VM provisioning, automated template builds, and reference application deployments.
+> **Open-source Day 2 IaC for VMware VVF/VCF on PowerEdge + PowerStore**
+> Self-service VMs, automated templates, guest automation, and chargeback/showback.
 
-[![pdgeek.io](https://img.shields.io/badge/pdgeek.io-reference--architecture-blue)](https://pdgeek.io)
+[![pdgeek.io](https://img.shields.io/badge/pdgeek.io-Day%202%20Ops-blue)](https://pdgeek.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-An open-source, community-driven reference architecture for running VMware VVF/VCF on PowerEdge servers with PowerStore storage. Everything is Infrastructure as Code — Terraform, Packer, Ansible, and PowerCLI — ready to clone and run in your lab.
+Your VCF/VVF environment is deployed. Now what? This repo handles everything after — standing up new VMs that can't be migrated, automating inside the guest OS via VMware Tools, building golden templates, and tracking who's using what with chargeback/showback.
 
 **Built by practitioners, for practitioners.**
 
-## Architecture Overview
+## What This Covers (Day 2)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Self-Service Portal                         │
-│              (PowerCLI Menu / FastAPI / Catalog YAML)               │
+│                     Day 2 Operations (this repo)                   │
+│                                                                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────────────┐   │
+│  │ Self-Service │  │   Template  │  │   Chargeback / Showback  │   │
+│  │ VM Catalog   │  │   Factory   │  │   Cost tags, rates,      │   │
+│  │ PowerCLI /   │  │   Packer    │  │   per-dept reports,      │   │
+│  │ FastAPI      │  │   builds    │  │   lifecycle tracking     │   │
+│  └─────────────┘  └─────────────┘  └──────────────────────────┘   │
+│                                                                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────────────┐   │
+│  │   Guest     │  │  Reference  │  │   VM Lifecycle            │   │
+│  │ Automation  │  │  Apps       │  │   Idle detection,         │   │
+│  │ VMware Tools│  │  nginx,     │  │   rightsizing,            │   │
+│  │ (no SSH)    │  │  PostgreSQL │  │   decommission            │   │
+│  └─────────────┘  └─────────────┘  └──────────────────────────┘   │
+│                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
-│                     Reference Applications                         │
-│         ┌──────────┐  ┌──────────┐  ┌──────────────┐              │
-│         │  Nginx   │  │  Flask   │  │  PostgreSQL  │              │
-│         │  Web Tier│  │  App Tier│  │  DB Tier     │              │
-│         └──────────┘  └──────────┘  └──────────────┘              │
-├─────────────────────────────────────────────────────────────────────┤
-│                     VM Templates (Packer)                           │
-│      Ubuntu 24.04 │ RHEL 9 │ Windows Server 2022/2025              │
-├─────────────────────────────────────────────────────────────────────┤
-│                  VMware vSphere / VCF Platform                      │
-│   ┌────────────┐  ┌────────────┐  ┌────────────────────┐          │
-│   │ vCenter    │  │ Clusters   │  │ Distributed Switch │          │
-│   │ Datacenter │  │ Resource   │  │ Port Groups        │          │
-│   │ Folders    │  │ Pools      │  │ NSX (VCF)          │          │
-│   └────────────┘  └────────────┘  └────────────────────┘          │
-├─────────────────────────────────────────────────────────────────────┤
-│                     Physical Infrastructure                        │
-│   ┌──────────────────────┐    ┌────────────────────────┐          │
-│   │   PowerEdge          │    │   PowerStore            │          │
-│   │   R760 / R660        │    │   1200T / 3200T        │          │
-│   │   (Compute)          │    │   (Block Storage)      │          │
-│   └──────────────────────┘    └────────────────────────┘          │
+│              Existing VCF / VVF Platform (already deployed)        │
+│              PowerEdge (Compute)  +  PowerStore (Storage)          │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+## What This Does NOT Cover (Day 0/1)
+
+- VCF deployment, SDDC Manager bring-up, workload domain creation
+- ESXi installation, vCenter deployment, cluster creation
+- Those are automated by VCF itself — this repo picks up after that
 
 ## Quick Start
 
@@ -48,27 +48,21 @@ An open-source, community-driven reference architecture for running VMware VVF/V
 
 | Component | Minimum Version | Notes |
 |-----------|----------------|-------|
-| VMware vCenter | 8.0 U2+ | VVF or VCF licensed |
+| VMware vCenter | 8.0 U2+ | VVF or VCF — already deployed |
 | PowerStore | PowerStoreOS 3.5+ | REST API enabled |
-| PowerEdge | 16th Gen (R760/R660) | iDRAC9 configured |
 | Terraform | 1.6+ | With vsphere + powerstore providers |
 | Packer | 1.10+ | With vsphere plugin |
 | Ansible | 2.15+ | With vmware and dell collections |
-| PowerCLI | 13.2+ | For self-service scripts |
+| PowerCLI | 13.2+ | Core of the self-service layer |
 
 ### 1. Clone and Configure
 
 ```bash
 git clone https://github.com/pdgeek-io/vmware-reference.git
 cd vmware-reference
-
-# Copy example configs and fill in your lab values
 cp config/lab.auto.tfvars.example config/lab.auto.tfvars
 cp config/powerstore.env.example config/powerstore.env
-cp config/inventory/hosts.yml.example config/inventory/hosts.yml
-
-# Edit with your lab-specific values
-vim config/lab.auto.tfvars
+# Edit with your environment values
 ```
 
 ### 2. Initialize
@@ -83,59 +77,116 @@ make init
 make build-templates
 ```
 
-### 4. Deploy Foundation Infrastructure
+### 4. Launch the Operations Menu
 
 ```bash
-make deploy-foundation
+make demo
 ```
 
-### 5. Launch Self-Service Demo
+## Operations Menu
 
-```bash
-# PowerCLI interactive menu
-make demo
+The interactive PowerCLI menu covers all Day 2 tasks:
 
-# OR deploy a three-tier app in one command
-make deploy-three-tier
+```
+── Self-Service VMs ─────────────────────────────────
+  1) Small Linux       (2 vCPU, 4 GB, Ubuntu 24.04)
+  2) Medium Linux      (4 vCPU, 8 GB, RHEL 9)
+  3) Large Database    (8 vCPU, 32 GB, PostgreSQL + PowerStore)
+  4) Windows Standard  (4 vCPU, 8 GB, Server 2022)
+  5) Three-Tier App    (Web + App + Database)
+
+── Guest Automation (VMware Tools) ──────────────────
+  6) Run command in guest VM
+  7) Get guest system info
+  8) Install package in guest
+  9) Copy file to/from guest
+
+── Chargeback / Showback ────────────────────────────
+ 10) Chargeback report (all VMs)
+ 11) Chargeback by department
+ 12) Tag a VM for cost tracking
+ 13) Export chargeback to CSV
+
+── Lifecycle & Operations ───────────────────────────
+ 14) Lab status dashboard
+ 15) VM lifecycle report (idle/oversized detection)
+ 16) Remove a VM
 ```
 
 ## Repository Structure
 
 ```
-terraform/          Terraform modules and stacks (PowerStore + vSphere + VCF)
+powercli/           PowerCLI module — self-service, chargeback, guest automation
+self-service/       VM catalog (YAML) + FastAPI portal + web UI
 packer/             Automated VM template builds (Ubuntu, RHEL, Windows)
-ansible/            Configuration management and app deployment
-powercli/           PowerCLI self-service module and scripts
-self-service/       VM catalog definitions and optional web portal
-reference-vms/      Pre-built application compositions (3-tier app, DB cluster)
-pipelines/          CI/CD workflows (GitHub Actions, GitLab CI)
+ansible/            Post-deploy configuration and app installation
+terraform/          Terraform modules for VM deployment + storage provisioning
+chargeback/         Rate cards, tag setup, report output
+reference-vms/      Pre-built app compositions (3-tier app, DB cluster)
+pipelines/          CI/CD workflows (GitHub Actions)
 config/             Environment-specific configuration (not committed)
-docs/               Architecture documentation and runbooks
+docs/               Architecture docs and quickstart guide
 tests/              Validation and smoke tests
 ```
 
-## Automation Layers
+## Key Capabilities
 
-| Layer | Tool | What It Does |
-|-------|------|-------------|
-| Storage | Terraform (dell/powerstore) | Provisions volumes, host mappings, snapshot policies |
-| Platform | Terraform (hashicorp/vsphere) | Configures datacenter, clusters, networking, datastores |
-| Templates | Packer (vsphere-iso) | Builds hardened OS templates with VMware Tools |
-| Configuration | Ansible | Post-deploy OS config, app installation, DB setup |
-| Self-Service | PowerCLI / FastAPI | Catalog-driven VM provisioning |
-| Validation | InSpec / Shell | Verifies deployments match desired state |
+### Self-Service VM Provisioning
 
-## Use Cases
+Deploy VMs from a YAML catalog. Each catalog item defines CPU, memory, storage, template, and post-deploy automation. Works through PowerCLI, Terraform, or the FastAPI web portal.
 
-1. **"Storage to VM in 5 Minutes"** — `make deploy-foundation` provisions PowerStore volumes, creates VMFS datastores, and stands up the vSphere foundation.
+```powershell
+New-RefVM -Name "dev-web-01" -CatalogItem "small-linux" -IPAddress "10.0.200.50"
+```
 
-2. **"Self-Service VM Catalog"** — `make demo` walks through the interactive PowerCLI menu for catalog-driven VM deployment.
+### VM Templates (Packer)
 
-3. **"One-Click Three-Tier App"** — `make deploy-three-tier` deploys nginx + Flask + PostgreSQL on three VMs with PowerStore-backed storage.
+Automated golden image builds for Ubuntu 24.04, RHEL 9, and Windows Server 2022. Uses `vsphere-iso` builder with pvscsi, vmxnet3, and VMware Tools baked in.
 
-4. **"Template Factory"** — `make build-templates` shows automated, repeatable OS image creation with Packer.
+```bash
+make build-template-ubuntu
+```
 
-5. **"VCF Workload Domain"** — `make deploy-vcf-domain` (requires VCF) automates workload domain provisioning via SDDC Manager.
+### Guest Automation via VMware Tools
+
+Run commands, install packages, and transfer files inside guest VMs — no SSH keys or WinRM needed. Uses `Invoke-VMScript` and `Copy-VMGuestFile` through VMware Tools.
+
+```powershell
+# Run a command inside a guest
+Invoke-GuestAutomation -VMName "web-01" -Script "nginx -v"
+
+# Install a package without SSH
+Invoke-GuestAutomation -VMName "web-01" -Action InstallPackage -PackageName "nginx"
+
+# Copy a config file into the guest
+Copy-GuestFile -VMName "web-01" -Source "./nginx.conf" -Destination "/etc/nginx/nginx.conf"
+```
+
+### Chargeback / Showback
+
+Track resource consumption per VM and roll it up by department, project, or owner. Configurable rate cards, vSphere tag-based cost center assignment, CSV/JSON export.
+
+```powershell
+# Full chargeback report
+Get-VMChargeback
+
+# By department
+Get-VMChargeback -Department "Engineering" -OutputFormat CSV
+
+# Tag a VM for tracking
+Set-VMCostTags -VMName "web-01" -Department "Engineering" -Project "RefApp" -Owner "jsmith"
+
+# Find idle/oversized VMs
+Get-VMLifecycle -ShowRightsizing
+```
+
+### Reference Applications
+
+One-command deployment of a three-tier app (nginx + Flask + PostgreSQL) with PowerStore-backed database storage and Ansible post-deploy configuration.
+
+```bash
+make deploy-three-tier
+```
 
 ## Contributing
 
@@ -147,4 +198,4 @@ Apache License 2.0. See [LICENSE](LICENSE).
 
 ---
 
-*An open-source project from [pdgeek.io](https://pdgeek.io) — practical infrastructure code for the community.*
+*An open-source project from [pdgeek.io](https://pdgeek.io) — practical Day 2 VMware operations for the community.*
