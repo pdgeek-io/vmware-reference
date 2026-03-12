@@ -16,12 +16,14 @@ from models.requests import (
     CMDBAsset,
     CMDBAssetUpdate,
 )
+from routers.requests import _assets
 
 router = APIRouter()
 
-# Shared asset store (imported by requests router via module-level reference)
-# In production, this would be a database
-from routers.requests import _assets
+
+def _get_itsm_adapter():
+    from adapters import get_adapter
+    return get_adapter()
 
 
 @router.get("/cmdb/assets")
@@ -92,9 +94,7 @@ def update_asset(asset_id: str, update: CMDBAssetUpdate):
     asset.updated_at = datetime.utcnow()
     _assets[asset_id] = asset
 
-    # Sync to ITSM
-    from adapters import get_adapter
-    adapter = get_adapter()
+    adapter = _get_itsm_adapter()
     if adapter:
         adapter.update_ci(asset)
 
@@ -115,8 +115,7 @@ def create_asset(asset: CMDBAsset):
     asset.updated_at = datetime.utcnow()
     _assets[asset.id] = asset
 
-    from adapters import get_adapter
-    adapter = get_adapter()
+    adapter = _get_itsm_adapter()
     if adapter:
         adapter.create_ci(asset)
 
@@ -131,8 +130,7 @@ def sync_cmdb():
     Pushes all local assets to the external CMDB. Useful for initial
     import or reconciliation after drift.
     """
-    from adapters import get_adapter
-    adapter = get_adapter()
+    adapter = _get_itsm_adapter()
     if not adapter:
         raise HTTPException(status_code=400, detail="No ITSM adapter configured. Set ITSM_PROVIDER env var.")
 

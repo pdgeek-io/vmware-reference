@@ -22,12 +22,26 @@ logger = logging.getLogger(__name__)
 
 
 class TeamDynamixAdapter(BaseAdapter):
+
+    ASSET_STATUS_MAP = {
+        "active": "TDX_ASSET_STATUS_ACTIVE",
+        "provisioning": "TDX_ASSET_STATUS_ACTIVE",
+        "decommissioned": "TDX_ASSET_STATUS_DISPOSED",
+    }
+
     def __init__(self):
         self.base_url = os.getenv("TDX_BASE_URL", "").rstrip("/")
         self.app_id = os.getenv("TDX_APP_ID", "")
         self.beid = os.getenv("TDX_BEID", "")
         self.ws_key = os.getenv("TDX_WEB_SERVICES_KEY", "")
         self._token = None
+
+    def _resolve_asset_status(self, status: str, default: int = 9) -> int:
+        """Resolve an asset status string to a TDX status ID."""
+        env_key = self.ASSET_STATUS_MAP.get(status)
+        if env_key:
+            return int(os.getenv(env_key, str(default)))
+        return default
 
     def _get_token(self) -> str:
         """Authenticate with TDX Admin API and get a bearer token."""
@@ -146,16 +160,9 @@ class TeamDynamixAdapter(BaseAdapter):
         }
         form_id = form_map.get(asset.asset_type, 0)
 
-        # TDX status IDs: Active=9, In Use=10, Disposed=14
-        status_map = {
-            "active": int(os.getenv("TDX_ASSET_STATUS_ACTIVE", "9")),
-            "provisioning": int(os.getenv("TDX_ASSET_STATUS_ACTIVE", "9")),
-            "decommissioned": int(os.getenv("TDX_ASSET_STATUS_DISPOSED", "14")),
-        }
-
         payload = {
             "Name": asset.name,
-            "StatusID": status_map.get(asset.status.value, 9),
+            "StatusID": self._resolve_asset_status(asset.status.value),
             "FormID": form_id,
             "OwnerUID": asset.owner_email,  # TDX resolves by email
             "Description": (
@@ -202,11 +209,9 @@ class TeamDynamixAdapter(BaseAdapter):
                 resp.raise_for_status()
                 existing = resp.json()
 
-                status_map = {
-                    "active": int(os.getenv("TDX_ASSET_STATUS_ACTIVE", "9")),
-                    "decommissioned": int(os.getenv("TDX_ASSET_STATUS_DISPOSED", "14")),
-                }
-                existing["StatusID"] = status_map.get(asset.status.value, existing.get("StatusID", 9))
+                existing["StatusID"] = self._resolve_asset_status(
+                    asset.status.value, default=existing.get("StatusID", 9)
+                )
 
                 resp = client.post(f"/assets/{asset.itsm_ci_id}", json=existing)
                 resp.raise_for_status()

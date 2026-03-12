@@ -4,6 +4,7 @@ ITSM-compatible request lifecycle: submit → approve → provision → complete
 Integrates with ServiceNow, TeamDynamix, or any ITSM via adapters.
 """
 
+import json
 import os
 import subprocess
 import uuid
@@ -40,6 +41,12 @@ def _get_itsm_adapter():
     """Load the configured ITSM adapter."""
     from adapters import get_adapter
     return get_adapter()
+
+
+def _get_powerscale_rate() -> float:
+    """Get the PowerScale per-GB/month rate from the chargeback rate card."""
+    from routers.chargeback import _load_rates
+    return _load_rates().get("PowerScalePerGBMonth", 0.05)
 
 
 # --- Request Lifecycle ---
@@ -247,15 +254,22 @@ def _fulfill_vm_request(req: ServiceRequest) -> dict:
 
     payload = req.payload
 
-    # Trigger PowerCLI
-    powercli_cmd = [
-        "pwsh", "-Command",
-        f"Import-Module {PROJECT_ROOT}/powercli/modules/PDGeekRef; "
-        f"New-RefVM -Name '{payload['vm_name']}' "
-        f"-CatalogItem '{payload['catalog_item']}' "
-        f"-IPAddress '{payload['ip_address']}'"
-    ]
-    subprocess.Popen(powercli_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Trigger PowerCLI — pass params via stdin JSON to avoid shell injection
+    powercli_script = (
+        f"Import-Module '{PROJECT_ROOT}/powercli/modules/PDGeekRef'; "
+        "$p = $input | ConvertFrom-Json; "
+        "New-RefVM -Name $p.vm_name -CatalogItem $p.catalog_item -IPAddress $p.ip_address"
+    )
+    proc = subprocess.Popen(
+        ["pwsh", "-Command", powercli_script],
+        stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    proc.stdin.write(json.dumps({
+        "vm_name": payload["vm_name"],
+        "catalog_item": payload["catalog_item"],
+        "ip_address": payload["ip_address"],
+    }).encode())
+    proc.stdin.close()
 
     # Create CMDB asset
     asset_id = f"CI-{uuid.uuid4().hex[:8].upper()}"
@@ -304,27 +318,38 @@ def _fulfill_share_request(req: ServiceRequest) -> dict:
 
     payload = req.payload
 
-    # Trigger PowerCLI
-    flags_str = ""
+    # Trigger PowerCLI — pass params via stdin JSON to avoid shell injection
+    flags_expr = ""
     if payload.get("compliance_flags"):
-        flags_str = f" -ComplianceFlags @({','.join(repr(f) for f in payload['compliance_flags'])})"
+        flags_expr = " -ComplianceFlags $p.compliance_flags"
 
-    powercli_cmd = [
-        "pwsh", "-Command",
-        f"Import-Module {PROJECT_ROOT}/powercli/modules/PDGeekRef; "
-        f"New-ResearcherShare -Name '{payload['share_name']}' "
-        f"-Department '{payload['department']}' "
-        f"-PIName '{payload['pi_name']}' "
-        f"-PIUsername '{payload['pi_username']}' "
-        f"-PIEmail '{payload['pi_email']}' "
-        f"-GrantID '{payload['grant_id']}' "
-        f"-GrantAgency '{payload['grant_agency']}' "
-        f"-GrantExpiration '{payload['grant_expiration']}' "
-        f"-QuotaGB {payload['quota_gb']} "
-        f"-DataClassification '{payload['data_classification']}'"
-        f"{flags_str}"
-    ]
-    subprocess.Popen(powercli_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    powercli_script = (
+        f"Import-Module '{PROJECT_ROOT}/powercli/modules/PDGeekRef'; "
+        "$p = $input | ConvertFrom-Json; "
+        "New-ResearcherShare -Name $p.share_name -Department $p.department "
+        "-PIName $p.pi_name -PIUsername $p.pi_username -PIEmail $p.pi_email "
+        "-GrantID $p.grant_id -GrantAgency $p.grant_agency "
+        "-GrantExpiration $p.grant_expiration -QuotaGB $p.quota_gb "
+        f"-DataClassification $p.data_classification{flags_expr}"
+    )
+    proc = subprocess.Popen(
+        ["pwsh", "-Command", powercli_script],
+        stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    proc.stdin.write(json.dumps({
+        "share_name": payload["share_name"],
+        "department": payload["department"],
+        "pi_name": payload["pi_name"],
+        "pi_username": payload["pi_username"],
+        "pi_email": payload["pi_email"],
+        "grant_id": payload["grant_id"],
+        "grant_agency": payload["grant_agency"],
+        "grant_expiration": payload["grant_expiration"],
+        "quota_gb": payload["quota_gb"],
+        "data_classification": payload["data_classification"],
+        "compliance_flags": payload.get("compliance_flags", []),
+    }).encode())
+    proc.stdin.close()
 
     # Create CMDB asset
     asset_id = f"CI-{uuid.uuid4().hex[:8].upper()}"
@@ -340,7 +365,7 @@ def _fulfill_share_request(req: ServiceRequest) -> dict:
         grant_id=payload["grant_id"],
         cost_center=payload.get("cost_center"),
         expiration_date=payload["grant_expiration"],
-        monthly_cost=round(payload["quota_gb"] * 0.05, 2),
+        monthly_cost=round(payload["quota_gb"] * _get_powerscale_rate(), 2),
         attributes={
             "pi_username": payload["pi_username"],
             "grant_agency": payload["grant_agency"],
