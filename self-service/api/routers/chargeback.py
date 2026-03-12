@@ -17,19 +17,55 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 RATES_FILE = PROJECT_ROOT / "chargeback" / "templates" / "rates.yml"
 RESEARCH_SHARES_DIR = PROJECT_ROOT / "config" / "research-shares"
 
+_DEFAULT_RATES = {
+    "CpuPerVCpuMonth": 15.00,
+    "MemoryPerGBMonth": 5.00,
+    "StoragePerGBMonth": 0.10,
+    "PowerStorePerGBMonth": 0.15,
+    "PowerScalePerGBMonth": 0.05,
+    "NetworkPerVNICMonth": 2.00,
+}
+
+_rates_cache: dict | None = None
+_rates_mtime: float = 0.0
+
 
 def _load_rates() -> dict:
-    if RATES_FILE.exists():
-        with open(RATES_FILE) as f:
-            return yaml.safe_load(f)
-    return {
-        "CpuPerVCpuMonth": 15.00,
-        "MemoryPerGBMonth": 5.00,
-        "StoragePerGBMonth": 0.10,
-        "PowerStorePerGBMonth": 0.15,
-        "PowerScalePerGBMonth": 0.05,
-        "NetworkPerVNICMonth": 2.00,
-    }
+    global _rates_cache, _rates_mtime
+    if not RATES_FILE.exists():
+        return _DEFAULT_RATES
+    mtime = RATES_FILE.stat().st_mtime
+    if _rates_cache is not None and mtime == _rates_mtime:
+        return _rates_cache
+    with open(RATES_FILE) as f:
+        _rates_cache = yaml.safe_load(f) or _DEFAULT_RATES
+    _rates_mtime = mtime
+    return _rates_cache
+
+
+_shares_cache: list | None = None
+_shares_dir_mtime: float = 0.0
+
+
+def _load_research_shares() -> list:
+    """Load research share YAML files, cached until directory changes."""
+    global _shares_cache, _shares_dir_mtime
+    if not RESEARCH_SHARES_DIR.exists():
+        return []
+    mtime = RESEARCH_SHARES_DIR.stat().st_mtime
+    if _shares_cache is not None and mtime == _shares_dir_mtime:
+        return _shares_cache
+    shares = []
+    for f in sorted(RESEARCH_SHARES_DIR.glob("*.yml")):
+        if f.name == ".gitkeep":
+            continue
+        with open(f) as fh:
+            data = yaml.safe_load(fh)
+            if data:
+                shares.append(data)
+    _shares_cache = shares
+    _shares_dir_mtime = mtime
+    return _shares_cache
 
 
 def _get_fiscal_year() -> tuple[str, datetime]:
@@ -69,15 +105,7 @@ def get_research_share_chargeback(
     rate_per_gb = rates.get("PowerScalePerGBMonth", 0.05)
     fy_label, _ = _get_fiscal_year()
 
-    shares = []
-    if RESEARCH_SHARES_DIR.exists():
-        for f in sorted(RESEARCH_SHARES_DIR.glob("*.yml")):
-            if f.name == ".gitkeep":
-                continue
-            with open(f) as fh:
-                data = yaml.safe_load(fh)
-                if data:
-                    shares.append(data)
+    shares = list(_load_research_shares())
 
     if department:
         shares = [s for s in shares if s.get("department") == department]

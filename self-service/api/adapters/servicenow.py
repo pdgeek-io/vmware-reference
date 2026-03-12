@@ -20,6 +20,31 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceNowAdapter(BaseAdapter):
+
+    CI_CLASS_MAP = {
+        AssetType.virtual_machine: "cmdb_ci_vm_instance",
+        AssetType.research_share: "cmdb_ci_file_system",
+        AssetType.storage_volume: "cmdb_ci_storage_volume",
+    }
+
+    STATUS_MAP = {
+        "active": "1",
+        "provisioning": "6",
+        "decommissioning": "7",
+        "decommissioned": "2",
+        "read_only": "1",
+    }
+
+    STATE_MAP = {
+        "submitted": "1",        # Open
+        "pending_approval": "2",  # Work in Progress
+        "approved": "2",
+        "provisioning": "2",
+        "completed": "3",         # Closed Complete
+        "failed": "4",           # Closed Incomplete
+        "cancelled": "7",        # Cancelled
+    }
+
     def __init__(self):
         self.instance = os.getenv("SERVICENOW_INSTANCE", "")
         self.user = os.getenv("SERVICENOW_USER", "")
@@ -69,18 +94,8 @@ class ServiceNowAdapter(BaseAdapter):
         if not request.itsm_ticket_id:
             return {"skipped": "No ITSM ticket ID"}
 
-        state_map = {
-            "submitted": "1",        # Open
-            "pending_approval": "2",  # Work in Progress
-            "approved": "2",
-            "provisioning": "2",
-            "completed": "3",         # Closed Complete
-            "failed": "4",           # Closed Incomplete
-            "cancelled": "7",        # Cancelled
-        }
-
         payload = {
-            "state": state_map.get(request.status.value, "1"),
+            "state": self.STATE_MAP.get(request.status.value, "1"),
             "work_notes": f"[pdgeek.io] Status: {request.status.value}",
         }
         if request.cmdb_asset_id:
@@ -108,13 +123,7 @@ class ServiceNowAdapter(BaseAdapter):
 
     def create_ci(self, asset: CMDBAsset) -> dict:
         """Create a Configuration Item in ServiceNow CMDB."""
-        # Map asset types to ServiceNow CI classes
-        ci_class_map = {
-            AssetType.virtual_machine: "cmdb_ci_vm_instance",
-            AssetType.research_share: "cmdb_ci_file_system",
-            AssetType.storage_volume: "cmdb_ci_storage_volume",
-        }
-        table = ci_class_map.get(asset.asset_type, "cmdb_ci")
+        table = self.CI_CLASS_MAP.get(asset.asset_type, "cmdb_ci")
 
         payload = {
             "name": asset.name,
@@ -154,23 +163,10 @@ class ServiceNowAdapter(BaseAdapter):
         if not asset.itsm_ci_sys_id:
             return {"skipped": "No ServiceNow sys_id"}
 
-        ci_class_map = {
-            AssetType.virtual_machine: "cmdb_ci_vm_instance",
-            AssetType.research_share: "cmdb_ci_file_system",
-            AssetType.storage_volume: "cmdb_ci_storage_volume",
-        }
-        table = ci_class_map.get(asset.asset_type, "cmdb_ci")
-
-        status_map = {
-            "active": "1",
-            "provisioning": "6",
-            "decommissioning": "7",
-            "decommissioned": "2",
-            "read_only": "1",
-        }
+        table = self.CI_CLASS_MAP.get(asset.asset_type, "cmdb_ci")
 
         payload = {
-            "operational_status": status_map.get(asset.status.value, "1"),
+            "operational_status": self.STATUS_MAP.get(asset.status.value, "1"),
             "u_cost_center": asset.cost_center or "",
         }
         if asset.monthly_cost is not None:
