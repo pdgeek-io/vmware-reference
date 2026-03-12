@@ -18,6 +18,7 @@ ansible-vault-password
 # Environment / Secrets
 config/powerstore.env
 config/powerscale.env
+config/itsm.env
 config/research-shares/*.yml
 config/lab.auto.tfvars
 config/inventory/hosts.yml
