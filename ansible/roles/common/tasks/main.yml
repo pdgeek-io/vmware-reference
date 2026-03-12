@@ -1,0 +1,36 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname_short }}"
+
+- name: Configure DNS resolution
+  ansible.builtin.template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    mode: "0644"
+
+- name: Install base packages
+  ansible.builtin.package:
+    name:
+      - curl
+      - wget
+      - jq
+      - vim
+      - htop
+      - net-tools
+      - open-vm-tools
+    state: present
+
+- name: Enable and start chronyd
+  ansible.builtin.service:
+    name: chronyd
+    state: started
+    enabled: true
+
+- name: Configure firewall (allow SSH)
+  ansible.posix.firewalld:
+    service: ssh
+    permanent: true
+    state: enabled
+  when: ansible_os_family == "RedHat"
+  notify: reload firewalld

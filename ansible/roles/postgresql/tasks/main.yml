@@ -1,0 +1,45 @@
+---
+- name: Install PostgreSQL
+  ansible.builtin.package:
+    name:
+      - postgresql-server
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install PostgreSQL (Debian)
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Initialize PostgreSQL database
+  ansible.builtin.command: postgresql-setup --initdb
+  args:
+    creates: /var/lib/pgsql/data/PG_VERSION
+  when: ansible_os_family == "RedHat"
+
+- name: Configure PostgreSQL to listen on all interfaces
+  ansible.builtin.lineinfile:
+    path: "{{ postgresql_conf_path }}"
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '*'"
+  notify: restart postgresql
+
+- name: Configure pg_hba for network access
+  ansible.builtin.template:
+    src: pg_hba.conf.j2
+    dest: "{{ postgresql_hba_path }}"
+    mode: "0600"
+    owner: postgres
+  notify: restart postgresql
+
+- name: Enable and start PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true

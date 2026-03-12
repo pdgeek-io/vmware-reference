@@ -1,0 +1,42 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.auto.tfvars
+crash.log
+
+# Packer
+*.pkrvars.hcl
+!*.pkrvars.hcl.example
+packer_cache/
+
+# Ansible
+*.retry
+ansible-vault-password
+
+# Environment / Secrets
+config/powerstore.env
+config/lab.auto.tfvars
+config/inventory/hosts.yml
+config/inventory/group_vars/*.yml
+!config/**/*.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# PowerShell
+*.log

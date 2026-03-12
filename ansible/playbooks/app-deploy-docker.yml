@@ -1,0 +1,27 @@
+---
+# Deploy Docker host with Portainer for container management
+- name: Deploy Docker Lab
+  hosts: docker_hosts
+  become: true
+
+  roles:
+    - role: common
+    - role: docker
+
+  tasks:
+    - name: Create Portainer volume
+      community.docker.docker_volume:
+        name: portainer_data
+
+    - name: Deploy Portainer
+      community.docker.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "9443:9443"
+          - "8000:8000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - portainer_data:/data

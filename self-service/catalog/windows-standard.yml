@@ -1,0 +1,19 @@
+# Windows Standard — general purpose Windows Server
+name: Windows Standard
+description: Windows Server 2022 — 4 vCPU, 8 GB RAM, 100 GB disk
+template: tpl-windows-2022
+os_family: windows
+
+compute:
+  cpu: 4
+  memory_mb: 8192
+
+storage:
+  os_disk_gb: 100
+  data_disks: []
+
+network:
+  port_group: DPG-Workload
+
+resource_pool: Development
+folder: Reference-VMs/App

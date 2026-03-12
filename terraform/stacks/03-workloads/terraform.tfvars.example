@@ -1,0 +1,32 @@
+# Example: deploy two workload VMs
+vsphere_server   = "vcenter.lab.example.com"
+vsphere_user     = "administrator@vsphere.local"
+vsphere_password = "CHANGE_ME"
+
+gateway     = "10.0.200.1"
+dns_servers = ["10.0.0.10"]
+
+vms = {
+  "web-01" = {
+    template      = "tpl-ubuntu-2404"
+    resource_pool = "Development"
+    folder        = "Reference-VMs/Web"
+    cpu           = 2
+    memory_mb     = 4096
+    os_disk_gb    = 40
+    ip_address    = "10.0.200.20"
+    data_disks    = []
+  }
+  "db-01" = {
+    template      = "tpl-ubuntu-2404"
+    resource_pool = "Development"
+    folder        = "Reference-VMs/Database"
+    cpu           = 4
+    memory_mb     = 16384
+    os_disk_gb    = 60
+    ip_address    = "10.0.200.30"
+    data_disks = [
+      { label = "data", size_gb = 200 }
+    ]
+  }
+}

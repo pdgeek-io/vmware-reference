@@ -1,0 +1,29 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:
+    hostname: ${hostname}
+    username: ${username}
+    password: ${password}
+  ssh:
+    install-server: true
+    allow-pw: true
+    authorized-keys:
+      - ${ssh_key}
+  storage:
+    layout:
+      name: lvm
+  packages:
+    - open-vm-tools
+    - python3
+    - python3-pip
+    - cloud-init
+    - curl
+    - wget
+    - jq
+  late-commands:
+    - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
+    - chmod 0440 /target/etc/sudoers.d/${username}

@@ -1,0 +1,46 @@
+# =============================================================================
+# Lab Environment Configuration
+# Copy this file to lab.auto.tfvars and fill in your values
+# =============================================================================
+
+# ─── vCenter Connection ──────────────────────────────────────────────
+vsphere_server   = "vcenter.lab.example.com"
+vsphere_user     = "administrator@vsphere.local"
+vsphere_password = "CHANGE_ME"
+
+# ─── vSphere Infrastructure ─────────────────────────────────────────
+datacenter_name  = "PDGeek-Lab-DC"
+cluster_name     = "PowerEdge-Cluster-01"
+datastore_name   = "PowerStore-DS01"
+
+# ─── ESXi Hosts ─────────────────────────────────────────────────────
+esxi_hosts = [
+  "esxi01.lab.example.com",
+  "esxi02.lab.example.com",
+  "esxi03.lab.example.com",
+]
+
+# ─── Networking ──────────────────────────────────────────────────────
+management_network   = "VM-Management"
+workload_network     = "VM-Workload"
+storage_network      = "VM-Storage"
+management_vlan_id   = 100
+workload_vlan_id     = 200
+storage_vlan_id      = 300
+
+# ─── PowerStore ──────────────────────────────────────────────────────
+powerstore_endpoint = "powerstore.lab.example.com"
+powerstore_user     = "admin"
+powerstore_password = "CHANGE_ME"
+
+# ─── VM Defaults ─────────────────────────────────────────────────────
+vm_domain       = "lab.example.com"
+vm_dns_servers  = ["10.0.0.10", "10.0.0.11"]
+vm_gateway      = "10.0.200.1"
+vm_subnet_mask  = "255.255.255.0"
+vm_network_cidr = "10.0.200.0/24"
+
+# ─── Resource Pools & Folders ────────────────────────────────────────
+resource_pool_name = "Reference-Lab"
+vm_folder_path     = "Reference-VMs"
+template_folder    = "Templates"

@@ -1,0 +1,5 @@
+---
+postgresql_conf_path: /var/lib/pgsql/data/postgresql.conf
+postgresql_hba_path: /var/lib/pgsql/data/pg_hba.conf
+postgresql_allowed_networks:
+  - "10.0.200.0/24"

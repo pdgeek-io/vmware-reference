@@ -1,0 +1,28 @@
+---
+# Post-deployment Linux VM configuration
+# Applies base hardening, tools validation, and platform tuning
+- name: Configure Linux VM
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+
+  roles:
+    - role: common
+    - role: vmware-guest
+
+  tasks:
+    - name: Verify VMware Tools is running
+      ansible.builtin.service:
+        name: vmtoolsd
+        state: started
+        enabled: true
+
+    - name: Set timezone
+      community.general.timezone:
+        name: "{{ timezone | default('America/Chicago') }}"
+
+    - name: Configure NTP
+      ansible.builtin.template:
+        src: "../roles/common/templates/chrony.conf.j2"
+        dest: /etc/chrony.conf
+        mode: "0644"
+      notify: restart chronyd

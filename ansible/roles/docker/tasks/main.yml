@@ -1,0 +1,34 @@
+---
+- name: Install Docker dependencies
+  ansible.builtin.package:
+    name:
+      - dnf-plugins-core
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Add Docker repo (RHEL/Rocky)
+  ansible.builtin.command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  args:
+    creates: /etc/yum.repos.d/docker-ce.repo
+  when: ansible_os_family == "RedHat"
+
+- name: Install Docker
+  ansible.builtin.package:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add user to docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: true

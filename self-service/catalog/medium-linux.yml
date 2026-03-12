@@ -1,0 +1,19 @@
+# Medium Linux VM — application servers
+name: Medium Linux
+description: RHEL 9 — 4 vCPU, 8 GB RAM, 80 GB disk
+template: tpl-rhel-9
+os_family: linux
+
+compute:
+  cpu: 4
+  memory_mb: 8192
+
+storage:
+  os_disk_gb: 80
+  data_disks: []
+
+network:
+  port_group: DPG-Workload
+
+resource_pool: Development
+folder: Reference-VMs/App

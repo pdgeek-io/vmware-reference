@@ -1,0 +1,19 @@
+# Small Linux VM — lightweight workloads, dev/test
+name: Small Linux
+description: Ubuntu 24.04 LTS — 2 vCPU, 4 GB RAM, 40 GB disk
+template: tpl-ubuntu-2404
+os_family: linux
+
+compute:
+  cpu: 2
+  memory_mb: 4096
+
+storage:
+  os_disk_gb: 40
+  data_disks: []
+
+network:
+  port_group: DPG-Workload
+
+resource_pool: Development
+folder: Reference-VMs/Web

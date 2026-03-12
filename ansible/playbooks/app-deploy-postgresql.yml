@@ -1,0 +1,43 @@
+---
+# Deploy PostgreSQL on reference VM
+- name: Deploy PostgreSQL Database
+  hosts: db_servers
+  become: true
+
+  roles:
+    - role: common
+    - role: postgresql
+
+  tasks:
+    - name: Create application database
+      community.postgresql.postgresql_db:
+        name: "{{ app_db_name | default('refapp') }}"
+        encoding: UTF-8
+        state: present
+      become_user: postgres
+
+    - name: Create application user
+      community.postgresql.postgresql_user:
+        name: "{{ app_db_user | default('refapp') }}"
+        password: "{{ app_db_password }}"
+        db: "{{ app_db_name | default('refapp') }}"
+        priv: ALL
+        state: present
+      become_user: postgres
+
+    - name: Load sample schema
+      community.postgresql.postgresql_query:
+        db: "{{ app_db_name | default('refapp') }}"
+        query: |
+          CREATE TABLE IF NOT EXISTS demo_data (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              metadata JSONB
+          );
+          INSERT INTO demo_data (name, metadata) VALUES
+              ('PowerEdge R760', '{"type": "compute", "gen": 16}'),
+              ('PowerStore 3200T', '{"type": "storage", "protocol": "iSCSI"}'),
+              ('VMware vSphere 8', '{"type": "platform", "edition": "VVF"}')
+          ON CONFLICT DO NOTHING;
+      become_user: postgres
