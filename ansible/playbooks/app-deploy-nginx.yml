@@ -1,0 +1,25 @@
+---
+# Deploy nginx web server on reference VM
+- name: Deploy Nginx Web Server
+  hosts: web_servers
+  become: true
+
+  roles:
+    - role: common
+    - role: nginx
+
+  tasks:
+    - name: Deploy reference app landing page
+      ansible.builtin.template:
+        src: "../roles/nginx/templates/index.html.j2"
+        dest: /var/www/html/index.html
+        mode: "0644"
+
+    - name: Verify nginx is serving
+      ansible.builtin.uri:
+        url: "http://localhost"
+        status_code: 200
+      register: result
+      retries: 3
+      delay: 5
+      until: result.status == 200

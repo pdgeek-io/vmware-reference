@@ -1,0 +1,25 @@
+# Global variables for all hosts
+domain: lab.example.com
+dns_servers:
+  - 10.0.0.10
+  - 10.0.0.11
+ntp_servers:
+  - 10.0.0.10
+timezone: America/Chicago
+
+# VMware
+vcenter_hostname: vcenter.lab.example.com
+vcenter_username: "administrator@vsphere.local"
+vcenter_password: "{{ vault_vcenter_password }}"
+datacenter_name: PDGeek-Lab-DC
+cluster_name: PowerEdge-Cluster-01
+
+# PowerStore
+powerstore_endpoint: powerstore.lab.example.com
+powerstore_username: admin
+powerstore_password: "{{ vault_powerstore_password }}"
+
+# Common VM settings
+vm_template_ubuntu: tpl-ubuntu-2404
+vm_template_rhel: tpl-rhel-9
+vm_template_windows: tpl-windows-2022

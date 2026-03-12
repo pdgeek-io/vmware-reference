@@ -1,0 +1,53 @@
+---
+# pdgeek.io — Provision PowerStore volumes via Ansible
+# Alternative to Terraform for Ansible-only workflows
+- name: Provision PowerStore Storage
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    powerstore_endpoint: "{{ lookup('env', 'POWERSTORE_ENDPOINT') | default(powerstore_endpoint) }}"
+    powerstore_username: "{{ lookup('env', 'POWERSTORE_USERNAME') | default(powerstore_username) }}"
+    powerstore_password: "{{ lookup('env', 'POWERSTORE_PASSWORD') | default(powerstore_password) }}"
+
+  tasks:
+    - name: Create storage volume
+      dellemc.powerstore.volume:
+        array_ip: "{{ powerstore_endpoint }}"
+        user: "{{ powerstore_username }}"
+        password: "{{ powerstore_password }}"
+        validate_certs: false
+        vol_name: "{{ item.name }}"
+        size: "{{ item.size_gb }}"
+        cap_unit: "GB"
+        state: present
+        description: "{{ item.description | default('Provisioned by Ansible') }}"
+        performance_policy: "{{ item.performance_policy | default('default_medium') }}"
+      loop: "{{ storage_volumes }}"
+
+    - name: Map volume to host group
+      dellemc.powerstore.volume:
+        array_ip: "{{ powerstore_endpoint }}"
+        user: "{{ powerstore_username }}"
+        password: "{{ powerstore_password }}"
+        validate_certs: false
+        vol_name: "{{ item.name }}"
+        host_group: "{{ item.host_group | default('esxi-cluster-hg') }}"
+        mapping_state: mapped
+        state: present
+      loop: "{{ storage_volumes }}"
+      when: item.map_to_hosts | default(true)
+
+    - name: Create snapshot rule
+      dellemc.powerstore.snapshotrule:
+        array_ip: "{{ powerstore_endpoint }}"
+        user: "{{ powerstore_username }}"
+        password: "{{ powerstore_password }}"
+        validate_certs: false
+        name: "{{ snapshot_rule_name | default('daily-snap') }}"
+        interval: "One_Day"
+        time_of_day: "03:00"
+        desired_retention: "{{ snapshot_retention_hours | default(168) }}"
+        state: present
+      when: create_snapshot_rule | default(true)

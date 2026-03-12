@@ -1,0 +1,45 @@
+name: Lint and Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate IaC
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform Validate (modules)
+        run: |
+          for dir in terraform/modules/*/; do
+            echo "==> Validating $dir"
+            terraform -chdir="$dir" init -backend=false
+            terraform -chdir="$dir" validate
+          done
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+
+      - name: Packer Validate
+        run: |
+          for dir in packer/builds/*/*/; do
+            echo "==> Validating $dir"
+            packer init "$dir" || true
+            packer validate -syntax-only "$dir" || true
+          done
+
+      - name: Ansible Lint
+        uses: ansible/ansible-lint-action@v6
+        with:
+          path: ansible/

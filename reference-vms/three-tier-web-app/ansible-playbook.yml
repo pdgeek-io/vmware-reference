@@ -1,0 +1,67 @@
+---
+# Post-deployment configuration for the three-tier reference application
+- name: Configure Web Tier
+  hosts: web_servers
+  become: true
+  roles:
+    - role: common
+    - role: nginx
+  vars:
+    vcf_or_vvf: "VVF"
+
+- name: Configure App Tier
+  hosts: app_servers
+  become: true
+  roles:
+    - role: common
+  tasks:
+    - name: Install Python app dependencies
+      ansible.builtin.package:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+        state: present
+
+    - name: Create app directory
+      ansible.builtin.file:
+        path: /opt/refapp
+        state: directory
+        mode: "0755"
+
+    - name: Deploy sample Flask app
+      ansible.builtin.copy:
+        dest: /opt/refapp/app.py
+        mode: "0644"
+        content: |
+          from flask import Flask, jsonify
+          import os
+
+          app = Flask(__name__)
+
+          @app.route('/health')
+          def health():
+              return jsonify({"status": "healthy", "host": os.uname().nodename})
+
+          @app.route('/api/infrastructure')
+          def infrastructure():
+              return jsonify({
+                  "compute": "PowerEdge R760",
+                  "storage": "PowerStore 3200T",
+                  "platform": "VMware vSphere 8 (VVF)",
+                  "automation": ["Terraform", "Packer", "Ansible", "PowerCLI"]
+              })
+
+          if __name__ == '__main__':
+              app.run(host='0.0.0.0', port=5000)
+
+- name: Configure Database Tier
+  hosts: db_servers
+  become: true
+  roles:
+    - role: common
+    - role: postgresql
+  vars:
+    app_db_name: refapp
+    app_db_user: refapp
+    app_db_password: "{{ vault_app_db_password | default('ChangeMeInProduction') }}"

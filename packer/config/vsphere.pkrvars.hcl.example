@@ -1,0 +1,9 @@
+# Copy to vsphere.pkrvars.hcl and fill in your values
+vsphere_server   = "vcenter.lab.example.com"
+vsphere_user     = "administrator@vsphere.local"
+vsphere_password = "CHANGE_ME"
+datacenter_name  = "PDGeek-Lab-DC"
+cluster_name     = "PowerEdge-Cluster-01"
+datastore_name   = "PowerStore-Templates"
+template_folder  = "Templates"
+network_name     = "DPG-Workload"

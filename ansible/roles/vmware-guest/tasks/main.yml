@@ -1,0 +1,20 @@
+---
+- name: Ensure open-vm-tools is installed
+  ansible.builtin.package:
+    name: open-vm-tools
+    state: present
+
+- name: Enable and start vmtoolsd
+  ansible.builtin.service:
+    name: vmtoolsd
+    state: started
+    enabled: true
+
+- name: Verify VMware Tools version
+  ansible.builtin.command: vmware-toolbox-cmd -v
+  register: vmtools_version
+  changed_when: false
+
+- name: Display VMware Tools version
+  ansible.builtin.debug:
+    msg: "VMware Tools version: {{ vmtools_version.stdout }}"

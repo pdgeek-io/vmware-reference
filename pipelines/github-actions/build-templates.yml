@@ -1,0 +1,74 @@
+name: Build VM Templates
+
+on:
+  schedule:
+    - cron: '0 6 * * 0' # Weekly on Sunday at 6 AM UTC
+  push:
+    paths:
+      - 'packer/**'
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu:
+    name: Build Ubuntu 24.04 Template
+    runs-on: self-hosted # Requires vCenter access
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: latest
+
+      - name: Init Packer
+        run: packer init packer/builds/linux/ubuntu-2404/
+
+      - name: Validate
+        run: |
+          packer validate \
+            -var-file="packer/config/vsphere.pkrvars.hcl" \
+            -var-file="packer/config/common.pkrvars.hcl" \
+            packer/builds/linux/ubuntu-2404/
+
+      - name: Build
+        run: |
+          packer build -force \
+            -var-file="packer/config/vsphere.pkrvars.hcl" \
+            -var-file="packer/config/common.pkrvars.hcl" \
+            packer/builds/linux/ubuntu-2404/
+        env:
+          VSPHERE_PASSWORD: ${{ secrets.VSPHERE_PASSWORD }}
+
+  build-rhel:
+    name: Build RHEL 9 Template
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-packer@main
+        with:
+          version: latest
+      - run: packer init packer/builds/linux/rhel-9/
+      - run: |
+          packer build -force \
+            -var-file="packer/config/vsphere.pkrvars.hcl" \
+            -var-file="packer/config/common.pkrvars.hcl" \
+            packer/builds/linux/rhel-9/
+        env:
+          VSPHERE_PASSWORD: ${{ secrets.VSPHERE_PASSWORD }}
+
+  build-windows:
+    name: Build Windows Server 2022 Template
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-packer@main
+        with:
+          version: latest
+      - run: packer init packer/builds/windows/windows-server-2022/
+      - run: |
+          packer build -force \
+            -var-file="packer/config/vsphere.pkrvars.hcl" \
+            -var-file="packer/config/common.pkrvars.hcl" \
+            packer/builds/windows/windows-server-2022/
+        env:
+          VSPHERE_PASSWORD: ${{ secrets.VSPHERE_PASSWORD }}

@@ -1,0 +1,16 @@
+---
+collections:
+  - name: vmware.vmware_rest
+    version: ">=3.0.0"
+  - name: community.vmware
+    version: ">=4.0.0"
+  - name: dellemc.powerstore
+    version: ">=3.0.0"
+  - name: community.postgresql
+    version: ">=3.0.0"
+  - name: community.docker
+    version: ">=3.0.0"
+  - name: community.general
+    version: ">=8.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"

@@ -1,0 +1,8 @@
+---
+dns_servers:
+  - 10.0.0.10
+  - 10.0.0.11
+domain: lab.example.com
+ntp_servers:
+  - 10.0.0.10
+timezone: America/Chicago

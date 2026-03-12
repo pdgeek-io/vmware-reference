@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pdgeek.io — VMware Reference Architecture</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 8px; padding: 30px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #0076CE; }
+        .stack { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .stack-item { background: #f0f7ff; padding: 15px; border-radius: 6px; text-align: center; }
+        .stack-item h3 { margin: 0 0 8px 0; color: #0076CE; }
+        .stack-item p { margin: 0; font-size: 0.9em; color: #555; }
+        .status { color: #28a745; font-weight: bold; }
+        .footer { text-align: center; margin-top: 30px; color: #999; font-size: 0.85em; }
+        .footer a { color: #0076CE; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>pdgeek.io — VMware Reference Architecture</h1>
+        <p>Self-service VM deployment on PowerEdge + PowerStore + VMware {{ vcf_or_vvf | default('VVF') }}</p>
+        <p class="status">Status: Running on {{ inventory_hostname }}</p>
+    </div>
+    <div class="card">
+        <h2>Infrastructure Stack</h2>
+        <div class="stack">
+            <div class="stack-item">
+                <h3>Compute</h3>
+                <p>PowerEdge<br>R760 / R660</p>
+            </div>
+            <div class="stack-item">
+                <h3>Storage</h3>
+                <p>PowerStore<br>1200T / 3200T</p>
+            </div>
+            <div class="stack-item">
+                <h3>Platform</h3>
+                <p>VMware vSphere 8<br>{{ vcf_or_vvf | default('VVF') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Deployed Components</h2>
+        <ul>
+            <li>Web Tier: nginx (this server)</li>
+            <li>App Tier: Flask application</li>
+            <li>DB Tier: PostgreSQL on PowerStore-backed storage</li>
+        </ul>
+    </div>
+    <div class="footer">
+        <a href="https://pdgeek.io">pdgeek.io</a> — open-source VMware reference architecture
+    </div>
+</body>
+</html>

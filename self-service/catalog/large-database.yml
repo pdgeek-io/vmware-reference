@@ -1,0 +1,27 @@
+# Large Database VM — PostgreSQL / SQL Server workloads
+# Data volume provisioned from PowerStore for high-performance I/O
+name: Large Database
+description: Ubuntu 24.04 LTS — 8 vCPU, 32 GB RAM, 60 GB OS + 200 GB PowerStore data volume
+template: tpl-ubuntu-2404
+os_family: linux
+
+compute:
+  cpu: 8
+  memory_mb: 32768
+
+storage:
+  os_disk_gb: 60
+  data_disks:
+    - label: data
+      size_gb: 200
+      powerstore_volume: true
+      description: "Database data volume on PowerStore"
+
+network:
+  port_group: DPG-Workload
+
+resource_pool: Production
+folder: Reference-VMs/Database
+
+post_deploy:
+  ansible_playbook: ansible/playbooks/app-deploy-postgresql.yml

@@ -1,0 +1,24 @@
+# Three-Tier Application — composite deployment
+# Deploys web + app + database VMs as a single unit
+name: Three-Tier Web Application
+description: "Nginx web + Flask app + PostgreSQL database on PowerEdge + PowerStore"
+type: composite
+
+components:
+  web:
+    catalog: small-linux
+    vm_name_prefix: web
+    post_deploy:
+      ansible_playbook: ansible/playbooks/app-deploy-nginx.yml
+
+  app:
+    catalog: medium-linux
+    vm_name_prefix: app
+    post_deploy:
+      ansible_playbook: ansible/playbooks/vm-configure-linux.yml
+
+  database:
+    catalog: large-database
+    vm_name_prefix: db
+    post_deploy:
+      ansible_playbook: ansible/playbooks/app-deploy-postgresql.yml
