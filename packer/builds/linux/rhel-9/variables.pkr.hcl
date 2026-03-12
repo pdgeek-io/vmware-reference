@@ -13,7 +13,24 @@ variable "iso_path" {
   default = "[PowerStore-Templates] ISO/rhel-9.4-x86_64-dvd.iso"
 }
 
-variable "build_username" { type = string; default = "packer" }
-variable "build_password" { type = string; sensitive = true; default = "packer" }
-variable "build_password_hash" { type = string; sensitive = true }
-variable "ssh_public_key" { type = string; default = "" }
+variable "build_username" {
+  type    = string
+  default = "packer"
+}
+
+variable "build_password" {
+  type      = string
+  sensitive = true
+  default   = "packer"
+}
+
+variable "build_password_hash" {
+  description = "SHA-512 hashed password for kickstart"
+  type        = string
+  sensitive   = true
+}
+
+variable "ssh_public_key" {
+  type    = string
+  default = ""
+}

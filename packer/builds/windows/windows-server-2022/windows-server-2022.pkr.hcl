@@ -23,6 +23,7 @@ source "vsphere-iso" "windows-2022" {
   folder     = var.template_folder
 
   vm_name              = "tpl-windows-2022"
+  # vSphere uses "windows2019srvNext_64Guest" for Server 2022+ (no distinct type)
   guest_os_type        = "windows2019srvNext_64Guest"
   firmware             = "efi"
   CPUs                 = 4
@@ -68,6 +69,22 @@ build {
       "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force",
       "Install-WindowsFeature -Name NET-Framework-45-Core",
       "Get-WindowsFeature | Where-Object Installed | Format-Table Name",
+    ]
+  }
+
+  # Enable TRIM/UNMAP so thin-provisioned disks reclaim deleted blocks on PowerStore.
+  # Virtual disks appear as fixed (non-SSD) so TRIM must be explicitly enabled.
+  provisioner "powershell" {
+    inline = [
+      "Write-Host '==> Enabling TRIM/UNMAP for disk reclaim...'",
+      "fsutil behavior set DisableDeleteNotify 0",
+      "# Enable weekly scheduled TRIM on all volumes",
+      "Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | ForEach-Object {",
+      "  Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim -Verbose",
+      "}",
+      "# Ensure the scheduled defrag/optimize task is enabled (handles ongoing TRIM)",
+      "Get-ScheduledTask -TaskPath '\\Microsoft\\Windows\\Defrag\\' | Enable-ScheduledTask",
+      "Write-Host '==> TRIM/UNMAP enabled.'",
     ]
   }
 

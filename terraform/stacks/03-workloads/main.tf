@@ -35,10 +35,15 @@ module "workload_vms" {
   vm_name       = each.key
   vm_folder     = each.value.folder
 
-  cpu_count      = each.value.cpu
-  memory_mb      = each.value.memory_mb
-  os_disk_size_gb = each.value.os_disk_gb
-  disks          = each.value.data_disks
+  cpu_count            = each.value.cpu
+  num_cores_per_socket = each.value.num_cores_per_socket
+  cpu_hot_add_enabled  = each.value.cpu_hot_add
+  memory_mb            = each.value.memory_mb
+  memory_hot_add_enabled = each.value.memory_hot_add
+  memory_reservation     = each.value.memory_reservation
+  latency_sensitivity    = each.value.latency_sensitivity
+  os_disk_size_gb      = each.value.os_disk_gb
+  disks                = each.value.data_disks
 
   ip_address  = each.value.ip_address
   gateway     = var.gateway

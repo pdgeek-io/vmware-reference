@@ -10,12 +10,13 @@ variable "network_name" { type = string; default = "DPG-Workload" }
 
 variable "iso_path" {
   type    = string
-  default = "[PowerStore-Templates] ISO/SERVER_EVAL_x64FRE_en-us.iso"
+  default = "[PowerStore-Templates] ISO/SERVER_EVAL_x64FRE_en-us_2022.iso"
 }
 
 variable "vmtools_iso_path" {
-  type    = string
-  default = "[] /vmimages/tools-isoimages/windows.iso"
+  description = "Path to VMware Tools ISO. Use vCenter's built-in copy or a datastore upload."
+  type        = string
+  default     = "[] /vmimages/tools-isoimages/windows.iso"
 }
 
 variable "build_password" {

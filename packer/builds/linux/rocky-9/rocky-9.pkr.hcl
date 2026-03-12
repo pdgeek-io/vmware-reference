@@ -1,5 +1,5 @@
 # =============================================================================
-# Packer — RHEL 9 / Rocky 9 VM Template for vSphere
+# Packer — Rocky Linux 9 VM Template for vSphere
 # =============================================================================
 
 packer {
@@ -11,7 +11,7 @@ packer {
   }
 }
 
-source "vsphere-iso" "rhel-9" {
+source "vsphere-iso" "rocky-9" {
   vcenter_server      = var.vsphere_server
   username            = var.vsphere_user
   password            = var.vsphere_password
@@ -22,13 +22,13 @@ source "vsphere-iso" "rhel-9" {
   datastore  = var.datastore_name
   folder     = var.template_folder
 
-  vm_name              = "tpl-rhel-9"
-  guest_os_type        = "rhel9_64Guest"
+  vm_name              = "tpl-rocky-9"
+  guest_os_type        = "rockylinux_64Guest"
   firmware             = "efi"
   CPUs                 = 2
   RAM                  = 2048
   disk_controller_type = ["pvscsi"]
-  notes                = "RHEL 9 template. Built by Packer on {{timestamp}}."
+  notes                = "Rocky Linux 9 template. Built by Packer on {{timestamp}}."
 
   storage {
     disk_size             = 40960
@@ -42,8 +42,9 @@ source "vsphere-iso" "rhel-9" {
 
   iso_paths = [var.iso_path]
 
+  # Reuse RHEL-9 kickstart — Rocky uses the same installer
   http_content = {
-    "/ks.cfg" = templatefile("${path.root}/http/ks.cfg", {
+    "/ks.cfg" = templatefile("${path.root}/../rhel-9/http/ks.cfg", {
       username = var.build_username
       password = var.build_password_hash
       ssh_key  = var.ssh_public_key
@@ -69,7 +70,7 @@ source "vsphere-iso" "rhel-9" {
 }
 
 build {
-  sources = ["source.vsphere-iso.rhel-9"]
+  sources = ["source.vsphere-iso.rocky-9"]
 
   # Enable disk space reclaim: fstrim sends UNMAP through pvscsi to PowerStore
   provisioner "shell" {
@@ -84,6 +85,6 @@ build {
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts         = ["${path.root}/scripts/cleanup.sh"]
+    scripts         = ["${path.root}/../rhel-9/scripts/cleanup.sh"]
   }
 }

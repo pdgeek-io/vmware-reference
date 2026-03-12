@@ -23,6 +23,7 @@ init: ## Initialize all tools (Terraform, Ansible Galaxy, Packer plugins)
 	@echo "==> Installing Packer plugins..."
 	packer init $(PACKER_DIR)/linux/ubuntu-2404/
 	packer init $(PACKER_DIR)/linux/rhel-9/
+	packer init $(PACKER_DIR)/linux/rocky-9/
 	packer init $(PACKER_DIR)/windows/windows-server-2022/
 	packer init $(PACKER_DIR)/windows/windows-server-2025/
 	@echo "==> Initializing PowerScale Terraform stack..."
@@ -31,7 +32,7 @@ init: ## Initialize all tools (Terraform, Ansible Galaxy, Packer plugins)
 
 # ─── VM Template Factory ─────────────────────────────────────────────
 
-build-templates: build-template-ubuntu build-template-rhel build-template-windows build-template-windows-2025 ## Build all VM templates
+build-templates: build-template-ubuntu build-template-rhel build-template-rocky build-template-windows build-template-windows-2025 ## Build all VM templates
 
 build-template-ubuntu: ## Build Ubuntu 24.04 template
 	@echo "==> Building Ubuntu 24.04 template..."
@@ -46,6 +47,13 @@ build-template-rhel: ## Build RHEL 9 template
 		-var-file="packer/config/vsphere.pkrvars.hcl" \
 		-var-file="packer/config/common.pkrvars.hcl" \
 		$(PACKER_DIR)/linux/rhel-9/
+
+build-template-rocky: ## Build Rocky Linux 9 template
+	@echo "==> Building Rocky Linux 9 template..."
+	packer build -force \
+		-var-file="packer/config/vsphere.pkrvars.hcl" \
+		-var-file="packer/config/common.pkrvars.hcl" \
+		$(PACKER_DIR)/linux/rocky-9/
 
 build-template-windows: ## Build Windows Server 2022 template
 	@echo "==> Building Windows Server 2022 template..."
