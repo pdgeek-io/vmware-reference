@@ -1,0 +1,30 @@
+# Windows Database — SQL Server for higher ed ERP, SIS, LMS backends
+name: Windows Database
+description: Windows Server 2022 + SQL Server — 8 vCPU, 32 GB RAM, 100 GB OS + 200 GB PowerStore data volume
+template: tpl-windows-2022
+os_family: windows
+
+compute:
+  cpu: 8
+  memory_mb: 32768
+
+storage:
+  os_disk_gb: 100
+  data_disks:
+    - label: sqldata
+      size_gb: 200
+      powerstore_volume: true
+      description: "SQL Server data volume on PowerStore"
+    - label: sqllog
+      size_gb: 50
+      powerstore_volume: true
+      description: "SQL Server log volume on PowerStore"
+
+network:
+  port_group: DPG-Workload
+
+resource_pool: Production
+folder: Reference-VMs/Database
+
+post_deploy:
+  ansible_playbook: ansible/playbooks/app-deploy-mssql.yml

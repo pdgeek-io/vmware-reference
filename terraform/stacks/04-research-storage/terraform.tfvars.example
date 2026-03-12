@@ -1,0 +1,95 @@
+# =============================================================================
+# pdgeek.io — Research Storage — Example Variable Values
+# Copy to terraform.tfvars and update with actual values
+#
+# Designed for state higher education institutions.
+# Data classification aligns with TAC 202. Retention periods
+# follow federal grant agency requirements.
+# =============================================================================
+
+powerscale_endpoint = "powerscale.lab.example.com"
+powerscale_user     = "admin"
+powerscale_password = "changeme"
+access_zone         = "research"
+
+research_shares = {
+  # ── NIH-funded genomics research ──────────────────────────────────
+  "genomics-seq-2025" = {
+    description      = "Whole-genome sequencing — population health study"
+    department       = "Biology"
+    pi_name          = "Dr. Jane Smith"
+    pi_username      = "jsmith"
+    pi_email         = "jsmith@university.edu"
+    grant_id         = "NIH-R01-GM123456"
+    grant_expiration = "2027-08-31"
+    quota_gb         = 10000
+    allowed_clients  = ["10.0.200.0/24"]
+  }
+
+  # ── NSF-funded climate research ───────────────────────────────────
+  "climate-modeling-gulf" = {
+    description      = "Gulf region climate modeling and simulation output"
+    department       = "Earth Sciences"
+    pi_name          = "Dr. Robert Chen"
+    pi_username      = "rchen"
+    pi_email         = "rchen@university.edu"
+    grant_id         = "NSF-AGS-2345678"
+    grant_expiration = "2027-12-31"
+    quota_gb         = 20000
+    allowed_clients  = ["10.0.200.0/24"]
+  }
+
+  # ── DOE-funded materials science ──────────────────────────────────
+  "advanced-materials" = {
+    description      = "High-performance computing output — battery materials"
+    department       = "Materials Science"
+    pi_name          = "Dr. Maria Garcia"
+    pi_username      = "mgarcia"
+    pi_email         = "mgarcia@university.edu"
+    grant_id         = "DOE-DE-SC0012345"
+    grant_expiration = "2028-03-15"
+    quota_gb         = 15000
+    allowed_clients  = ["10.0.200.0/24"]
+    security_flavors = ["unix", "krb5"]
+  }
+
+  # ── USDA agricultural research ────────────────────────────────────
+  "crop-yield-analysis" = {
+    description      = "Crop yield prediction models and satellite imagery"
+    department       = "Agricultural Sciences"
+    pi_name          = "Dr. James Wilson"
+    pi_username      = "jwilson"
+    pi_email         = "jwilson@university.edu"
+    grant_id         = "USDA-NIFA-2025-67890"
+    grant_expiration = "2027-09-30"
+    quota_gb         = 5000
+    allowed_clients  = ["10.0.200.0/24"]
+  }
+
+  # ── State-funded nursing research ─────────────────────────────────
+  "nursing-outcomes" = {
+    description      = "Patient outcomes analysis — rural health initiative"
+    department       = "Nursing"
+    pi_name          = "Dr. Sarah Johnson"
+    pi_username      = "sjohnson"
+    pi_email         = "sjohnson@university.edu"
+    grant_id         = "ST-CPRIT-RR-2025-001"
+    grant_expiration = "2026-08-31"
+    quota_gb         = 2000
+    allowed_clients  = ["10.0.200.0/24"]
+  }
+
+  # ── ML/AI research with Kerberos auth ─────────────────────────────
+  "ml-training-llm" = {
+    description      = "Large language model training data and checkpoints"
+    department       = "Computer Science"
+    pi_name          = "Dr. Wei Zhang"
+    pi_username      = "wzhang"
+    pi_email         = "wzhang@university.edu"
+    grant_id         = "NSF-OAC-2468013"
+    grant_expiration = "2028-06-30"
+    quota_gb         = 50000
+    allowed_clients  = ["10.0.200.0/24"]
+    security_flavors = ["unix", "krb5"]
+  }
+}

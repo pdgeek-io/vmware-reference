@@ -1,0 +1,54 @@
+---
+# Deploy SQL Server on Windows Server
+# Data and log volumes are PowerStore-backed for high-performance I/O
+- name: Deploy SQL Server
+  hosts: db_servers
+
+  roles:
+    - role: common-windows
+    - role: mssql
+
+  vars:
+    mssql_db_name: campusdb
+    mssql_max_memory_mb: 24576
+
+  tasks:
+    - name: Create campus demo tables
+      ansible.windows.win_command: >
+        sqlcmd -S localhost -U sa -P "{{ mssql_sa_password }}"
+        -Q "USE [campusdb];
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='students')
+        CREATE TABLE students (
+            id INT IDENTITY PRIMARY KEY,
+            first_name NVARCHAR(100),
+            last_name NVARCHAR(100),
+            email NVARCHAR(255),
+            department NVARCHAR(100),
+            enrollment_date DATE DEFAULT GETDATE()
+        );
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='courses')
+        CREATE TABLE courses (
+            id INT IDENTITY PRIMARY KEY,
+            course_name NVARCHAR(200),
+            department NVARCHAR(100),
+            credits INT,
+            semester NVARCHAR(20)
+        );
+        INSERT INTO students (first_name, last_name, email, department) VALUES
+            ('Jane', 'Smith', 'jsmith@campus.edu', 'Computer Science'),
+            ('Bob', 'Johnson', 'bjohnson@campus.edu', 'Engineering');
+        INSERT INTO courses (course_name, department, credits, semester) VALUES
+            ('Intro to Cloud Computing', 'Computer Science', 3, 'Fall 2026'),
+            ('Infrastructure Automation', 'IT', 3, 'Spring 2027');"
+      no_log: true
+
+    - name: Verify SQL Server is accepting connections
+      ansible.windows.win_command: >
+        sqlcmd -S localhost -U sa -P "{{ mssql_sa_password }}"
+        -Q "SELECT @@VERSION;"
+      register: sql_version
+      no_log: true
+
+    - name: Display SQL Server version
+      ansible.builtin.debug:
+        msg: "{{ sql_version.stdout_lines[2] | default('SQL Server running') }}"

@@ -1,0 +1,172 @@
+# =============================================================================
+# pdgeek.io — Research Storage Compliance Defaults
+# Aligned with Texas Administrative Code (TAC 202), state higher education
+# data governance, and federal grant agency requirements.
+# =============================================================================
+
+# ── Data Classification (TAC 202 aligned) ────────────────────────────
+# Texas state institutions must classify data per TAC 202.76
+data_classification:
+  levels:
+    - id: public
+      label: "Public"
+      description: "Open research data, published datasets, preprints"
+      controls: minimal
+      encryption_at_rest: false
+      encryption_in_transit: true
+
+    - id: controlled
+      label: "Controlled"
+      description: "Internal research data, unpublished results, grant proposals"
+      controls: standard
+      encryption_at_rest: true
+      encryption_in_transit: true
+
+    - id: confidential
+      label: "Confidential"
+      description: "FERPA student data, personnel records, proprietary research"
+      controls: elevated
+      encryption_at_rest: true
+      encryption_in_transit: true
+      mfa_required: true
+      audit_logging: true
+
+    - id: restricted
+      label: "Restricted"
+      description: "HIPAA PHI, export-controlled (ITAR/EAR), CUI per NIST 800-171"
+      controls: maximum
+      encryption_at_rest: true
+      encryption_in_transit: true
+      mfa_required: true
+      audit_logging: true
+      isolated_network: true
+      access_review_days: 90
+
+  default: controlled
+
+# ── Compliance Flags ─────────────────────────────────────────────────
+# Common regulatory overlays for research data in Texas higher ed
+compliance_flags:
+  - id: ferpa
+    label: "FERPA"
+    description: "Contains student educational records"
+    requires_classification: confidential
+
+  - id: hipaa
+    label: "HIPAA"
+    description: "Contains protected health information (PHI)"
+    requires_classification: restricted
+    requires_baa: true
+
+  - id: export_control
+    label: "Export Control (ITAR/EAR)"
+    description: "Subject to export control regulations"
+    requires_classification: restricted
+    requires_tcp: true  # Technology Control Plan
+
+  - id: cui
+    label: "Controlled Unclassified Information"
+    description: "Federal CUI per NIST SP 800-171 (DoD, DOE, etc.)"
+    requires_classification: restricted
+    nist_800_171: true
+
+  - id: pii
+    label: "PII"
+    description: "Personally identifiable information (Texas Identity Theft Enforcement Act)"
+    requires_classification: confidential
+
+  - id: proprietary
+    label: "Proprietary / IP"
+    description: "Industry-sponsored research with IP restrictions"
+    requires_classification: confidential
+    requires_nda: true
+
+# ── Grant Agency Defaults ────────────────────────────────────────────
+# Data retention and sharing requirements by federal agency
+grant_agencies:
+  NIH:
+    data_sharing_required: true
+    data_management_plan: true
+    retention_years: 7          # After grant closeout
+    open_access_policy: true    # NIH Public Access Policy
+    genomic_data_sharing: true  # GDS Policy for genomic data
+
+  NSF:
+    data_sharing_required: true
+    data_management_plan: true
+    retention_years: 5
+    open_access_policy: true
+
+  DOE:
+    data_sharing_required: true
+    data_management_plan: true
+    retention_years: 7
+    cui_possible: true          # DOE Order 471.6
+
+  DOD:
+    data_sharing_required: false
+    data_management_plan: true
+    retention_years: 7
+    cui_required: true          # DFARS 252.204-7012
+    nist_800_171: true
+
+  USDA:
+    data_sharing_required: true
+    data_management_plan: true
+    retention_years: 5
+
+  state_of_texas:
+    data_sharing_required: false
+    data_management_plan: false
+    retention_years: 5          # Texas State Library retention schedule
+    tac_202_required: true
+
+# ── Lifecycle Policies ───────────────────────────────────────────────
+# Grant-aware lifecycle management
+lifecycle:
+  # Notifications before grant expiration
+  notify_days_before_expiry: [180, 90, 60, 30, 14, 7]
+  notify_recipients:
+    - pi_email
+    - department_admin
+    - research_compliance
+
+  # Post-expiry actions
+  on_expiry:
+    action: read_only
+    notify: true
+    grace_period_days: 30       # PI can request extension
+
+  # Retention after grant closeout
+  retention:
+    default_years: 7            # Federal minimum for most agencies
+    action_after_retention: archive
+    archive_tier: cold          # Move to cold storage / tape
+    delete_requires_approval: true  # Must be approved by records management
+
+  # State audit requirements (Texas Government Code 441)
+  audit_trail:
+    log_all_access: true
+    log_retention_years: 7
+    exportable: true            # Must be exportable for state auditors
+
+# ── Access Control Defaults ──────────────────────────────────────────
+access_control:
+  authentication: entra_id      # Microsoft Entra ID (formerly Azure AD)
+  nfs_auth_method: rfc2307      # AD UID/GID mapping for Linux NFS
+  default_permissions: "0770"   # PI + group only
+  group_naming: "rsch-{department}-{share_name}"
+  review_frequency_days: 180    # Access review every 6 months
+  offboarding:
+    revoke_on_separation: true
+    transfer_to_department: true
+
+# ── Cost Model ───────────────────────────────────────────────────────
+# State institution internal rates (subsidized for research)
+chargeback:
+  standard_tier_per_gb_month: 0.05
+  performance_tier_per_gb_month: 0.12
+  archive_tier_per_gb_month: 0.01
+  billable_to: grant_id
+  fallback_billable: department_cost_center
+  fiscal_year_start: "09-01"    # Texas state fiscal year starts September 1

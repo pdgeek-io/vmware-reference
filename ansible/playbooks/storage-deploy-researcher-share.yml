@@ -1,0 +1,71 @@
+---
+# pdgeek.io — Deploy Researcher NFS Share on PowerScale
+# Self-service storage provisioning with AD/Entra ID auth
+#
+# Usage:
+#   ansible-playbook ansible/playbooks/storage-deploy-researcher-share.yml \
+#     -e share_name=genomics-2025 \
+#     -e share_department=Biology \
+#     -e share_pi_name="Dr. Jane Smith" \
+#     -e share_pi_username=jsmith \
+#     -e share_pi_email=jsmith@university.edu \
+#     -e share_grant_id=NIH-R01-GM123456 \
+#     -e share_grant_expiration=2027-08-31 \
+#     -e share_quota_gb=5000
+
+- name: Provision PowerScale research share
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    share_name: "{{ share_name }}"
+    share_department: "{{ share_department }}"
+    share_pi_name: "{{ share_pi_name }}"
+    share_pi_username: "{{ share_pi_username }}"
+    share_pi_email: "{{ share_pi_email }}"
+    share_grant_id: "{{ share_grant_id }}"
+    share_grant_expiration: "{{ share_grant_expiration }}"
+    share_quota_gb: "{{ share_quota_gb | default(1000) }}"
+
+  roles:
+    - role: ../roles/powerscale-nfs
+
+  post_tasks:
+    - name: Display share details
+      ansible.builtin.debug:
+        msg: |
+          ══════════════════════════════════════════════════════════════
+          Research Share Provisioned Successfully
+          ══════════════════════════════════════════════════════════════
+          Share Name:       {{ share_name }}
+          NFS Path:         {{ powerscale_endpoint }}:/ifs/research/{{ share_department }}/{{ share_name }}
+          Mount Command:    mount -t nfs {{ powerscale_endpoint }}:/ifs/research/{{ share_department }}/{{ share_name }} /mnt/research/{{ share_name }}
+          ──────────────────────────────────────────────────────────────
+          Department:       {{ share_department }}
+          PI:               {{ share_pi_name }} ({{ share_pi_username }})
+          Email:            {{ share_pi_email }}
+          Grant ID:         {{ share_grant_id }}
+          Grant Expires:    {{ share_grant_expiration }}
+          Quota:            {{ share_quota_gb }} GB
+          Auth:             Entra ID / AD via RFC2307
+          Snapshots:        Daily, {{ snapshot_retention_days | default(30) }} day retention
+          ══════════════════════════════════════════════════════════════
+
+    - name: Save share metadata to tracking file
+      ansible.builtin.copy:
+        content: |
+          ---
+          share_name: {{ share_name }}
+          department: {{ share_department }}
+          pi_name: {{ share_pi_name }}
+          pi_username: {{ share_pi_username }}
+          pi_email: {{ share_pi_email }}
+          grant_id: {{ share_grant_id }}
+          grant_expiration: {{ share_grant_expiration }}
+          quota_gb: {{ share_quota_gb }}
+          nfs_path: /ifs/research/{{ share_department }}/{{ share_name }}
+          provisioned_date: "{{ ansible_date_time.iso8601 | default(lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ')) }}"
+          status: active
+        dest: "{{ playbook_dir }}/../../config/research-shares/{{ share_name }}.yml"
+        mode: '0644'

@@ -1,0 +1,24 @@
+---
+# Post-deployment Windows Server configuration
+# Base hardening, VMware Tools validation, RDP, NTP, updates
+- name: Configure Windows Server VM
+  hosts: "{{ target_hosts | default('all') }}"
+
+  roles:
+    - role: common-windows
+    - role: vmware-guest
+
+  tasks:
+    - name: Verify VMware Tools is running
+      ansible.windows.win_service:
+        name: VMTools
+        state: started
+
+    - name: Get VMware Tools version
+      ansible.windows.win_command: '"C:\Program Files\VMware\VMware Tools\VMwareToolboxCmd.exe" -v'
+      register: vmtools_ver
+      changed_when: false
+
+    - name: Display VMware Tools version
+      ansible.builtin.debug:
+        msg: "VMware Tools: {{ vmtools_ver.stdout | trim }}"

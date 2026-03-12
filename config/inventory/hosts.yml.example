@@ -1,12 +1,62 @@
 # Ansible inventory for the reference lab
 # Copy to hosts.yml and update with actual IPs/hostnames
 all:
-  vars:
-    ansible_user: ansible
-    ansible_ssh_private_key_file: ~/.ssh/lab_key
-    ansible_become: true
-
   children:
+    # ─── Linux Hosts ──────────────────────────────────────
+    linux:
+      vars:
+        ansible_user: ansible
+        ansible_ssh_private_key_file: ~/.ssh/lab_key
+        ansible_become: true
+
+      children:
+        web_servers:
+          hosts:
+            web01.lab.example.com:
+
+        app_servers:
+          hosts:
+            app01.lab.example.com:
+
+        db_servers:
+          hosts:
+            db01.lab.example.com:
+              postgresql_role: primary
+
+        docker_hosts:
+          hosts:
+            docker01.lab.example.com:
+
+    # ─── Windows Hosts ────────────────────────────────────
+    windows:
+      vars:
+        ansible_connection: winrm
+        ansible_winrm_transport: credssp
+        ansible_user: Administrator
+        ansible_password: "{{ vault_windows_admin_password }}"
+        ansible_winrm_server_cert_validation: ignore
+
+      children:
+        windows_web_servers:
+          hosts:
+            iis01.lab.example.com:
+
+        windows_app_servers:
+          hosts:
+            dotnet01.lab.example.com:
+
+        windows_db_servers:
+          hosts:
+            sql01.lab.example.com:
+
+        domain_controllers:
+          hosts:
+            dc01.lab.example.com:
+              ad_role: first_dc
+            dc02.lab.example.com:
+              ad_role: additional_dc
+
+    # ─── Infrastructure ───────────────────────────────────
     vcenter:
       hosts:
         vcenter.lab.example.com:
@@ -17,22 +67,3 @@ all:
         esxi01.lab.example.com:
         esxi02.lab.example.com:
         esxi03.lab.example.com:
-
-    web_servers:
-      hosts:
-        web01.lab.example.com:
-
-    app_servers:
-      hosts:
-        app01.lab.example.com:
-
-    db_servers:
-      hosts:
-        db01.lab.example.com:
-          postgresql_role: primary
-        db02.lab.example.com:
-          postgresql_role: replica
-
-    docker_hosts:
-      hosts:
-        docker01.lab.example.com:

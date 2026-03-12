@@ -1,0 +1,20 @@
+---
+# pdgeek.io — PowerScale NFS defaults
+
+# PowerScale connection
+powerscale_endpoint: "{{ lookup('env', 'POWERSCALE_ENDPOINT') }}"
+powerscale_user: "{{ lookup('env', 'POWERSCALE_USER') | default('admin', true) }}"
+powerscale_password: "{{ lookup('env', 'POWERSCALE_PASSWORD') }}"
+
+# AD / Entra ID
+ad_domain: "campus.lab.example.com"
+ad_join_user: "{{ lookup('env', 'AD_JOIN_USER') }}"
+ad_join_password: "{{ lookup('env', 'AD_JOIN_PASSWORD') }}"
+configure_ad_provider: false
+
+# Access zone
+powerscale_access_zone: research
+
+# Snapshot defaults
+snapshot_retention_days: 30
+share_enable_snapshots: true

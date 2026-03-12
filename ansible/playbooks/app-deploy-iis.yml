@@ -1,0 +1,18 @@
+---
+# Deploy IIS web server on Windows Server
+- name: Deploy IIS Web Server
+  hosts: web_servers
+
+  roles:
+    - role: common-windows
+    - role: iis
+
+  tasks:
+    - name: Verify IIS is serving
+      ansible.windows.win_uri:
+        url: "http://localhost"
+        status_code: 200
+      register: result
+      retries: 3
+      delay: 5
+      until: result.status_code == 200

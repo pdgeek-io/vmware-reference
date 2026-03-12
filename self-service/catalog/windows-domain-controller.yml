@@ -1,0 +1,25 @@
+# Windows Domain Controller — Active Directory for campus identity
+name: Windows Domain Controller
+description: Windows Server 2022 + AD DS — 4 vCPU, 8 GB RAM, 100 GB OS + 50 GB NTDS data
+template: tpl-windows-2022
+os_family: windows
+
+compute:
+  cpu: 4
+  memory_mb: 8192
+
+storage:
+  os_disk_gb: 100
+  data_disks:
+    - label: ntds
+      size_gb: 50
+      description: "AD database and SYSVOL"
+
+network:
+  port_group: DPG-Workload
+
+resource_pool: Production
+folder: Reference-VMs/App
+
+post_deploy:
+  ansible_playbook: ansible/playbooks/app-deploy-ad.yml

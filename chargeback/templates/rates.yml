@@ -10,6 +10,10 @@ MemoryPerGBMonth: 5.00          # $ per GB RAM per month
 StoragePerGBMonth: 0.10         # $ per GB standard datastore per month
 PowerStorePerGBMonth: 0.15      # $ per GB PowerStore-backed storage per month
 
+# Research Storage (PowerScale NFS)
+PowerScalePerGBMonth: 0.05      # $ per GB research NFS per month (subsidized)
+PowerScaleFastPerGBMonth: 0.12  # $ per GB SSD-tier research storage per month
+
 # Network
 NetworkPerVNICMonth: 2.00       # $ per vNIC per month
 

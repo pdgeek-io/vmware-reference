@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>pdgeek.io — VMware Reference Architecture</title>
+    <style>
+        body { font-family: Segoe UI, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 8px; padding: 30px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #0076CE; }
+        .status { color: #28a745; font-weight: bold; }
+        .stack { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .stack-item { background: #f0f7ff; padding: 15px; border-radius: 6px; text-align: center; }
+        .stack-item h3 { margin: 0 0 8px 0; color: #0076CE; }
+        .stack-item p { margin: 0; font-size: 0.9em; color: #555; }
+        .footer { text-align: center; margin-top: 30px; color: #999; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>pdgeek.io — IIS on Windows Server</h1>
+        <p>Running on {{ inventory_hostname }} | Windows Server 2022 | IIS</p>
+        <p class="status">Status: Serving</p>
+    </div>
+    <div class="card">
+        <h2>Infrastructure Stack</h2>
+        <div class="stack">
+            <div class="stack-item"><h3>Compute</h3><p>PowerEdge R760</p></div>
+            <div class="stack-item"><h3>Storage</h3><p>PowerStore</p></div>
+            <div class="stack-item"><h3>Platform</h3><p>VMware vSphere 8</p></div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Windows Stack</h2>
+        <ul>
+            <li>Web Server: IIS (this server)</li>
+            <li>Database: SQL Server on PowerStore-backed storage</li>
+            <li>Identity: Active Directory Domain Services</li>
+        </ul>
+    </div>
+    <div class="footer">pdgeek.io — Day 2 VMware operations</div>
+</body>
+</html>

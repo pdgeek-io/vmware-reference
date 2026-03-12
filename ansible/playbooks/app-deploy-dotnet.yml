@@ -1,0 +1,51 @@
+---
+# Deploy .NET runtime and configure as an application server
+- name: Deploy .NET App Server
+  hosts: app_servers
+
+  roles:
+    - role: common-windows
+
+  tasks:
+    - name: Install .NET Hosting Bundle prerequisites
+      ansible.windows.win_feature:
+        name:
+          - Web-Server
+          - Web-Asp-Net45
+          - NET-Framework-45-Core
+        state: present
+
+    - name: Download .NET 8 Hosting Bundle
+      ansible.windows.win_get_url:
+        url: "{{ dotnet_hosting_bundle_url | default('https://download.visualstudio.microsoft.com/download/pr/hosting-bundle/dotnet-hosting-8-win.exe') }}"
+        dest: "C:\\Temp\\dotnet-hosting.exe"
+
+    - name: Install .NET 8 Hosting Bundle
+      ansible.windows.win_command: >
+        C:\Temp\dotnet-hosting.exe /install /quiet /norestart
+      args:
+        creates: "C:\\Program Files\\dotnet\\dotnet.exe"
+
+    - name: Verify .NET installation
+      ansible.windows.win_command: dotnet --list-runtimes
+      register: dotnet_runtimes
+      changed_when: false
+
+    - name: Display installed runtimes
+      ansible.builtin.debug:
+        msg: "{{ dotnet_runtimes.stdout_lines }}"
+
+    - name: Create application directory
+      ansible.windows.win_file:
+        path: "C:\\Apps"
+        state: directory
+
+    - name: Allow application port through firewall
+      community.windows.win_firewall_rule:
+        name: "App Server HTTP"
+        localport: 5000
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true

@@ -1,0 +1,76 @@
+---
+# IIS Web Server role for Windows
+
+- name: Install IIS with management tools
+  ansible.windows.win_feature:
+    name:
+      - Web-Server
+      - Web-Mgmt-Tools
+      - Web-Mgmt-Console
+      - Web-Scripting-Tools
+      - Web-Asp-Net45
+      - Web-Net-Ext45
+      - Web-ISAPI-Ext
+      - Web-ISAPI-Filter
+      - Web-Default-Doc
+      - Web-Static-Content
+      - Web-Http-Logging
+      - Web-Stat-Compression
+      - Web-Dyn-Compression
+      - Web-Security
+      - Web-Filtering
+      - Web-Windows-Auth
+    state: present
+  register: iis_install
+
+- name: Reboot after IIS install if needed
+  ansible.windows.win_reboot:
+  when: iis_install.reboot_required
+
+- name: Ensure IIS service is running
+  ansible.windows.win_service:
+    name: W3SVC
+    start_mode: auto
+    state: started
+
+- name: Remove default IIS site
+  community.windows.win_iis_website:
+    name: "Default Web Site"
+    state: absent
+
+- name: Create application directory
+  ansible.windows.win_file:
+    path: "{{ iis_site_path }}"
+    state: directory
+
+- name: Deploy default page
+  ansible.windows.win_template:
+    src: index.html.j2
+    dest: "{{ iis_site_path }}\\index.html"
+
+- name: Create IIS site
+  community.windows.win_iis_website:
+    name: "{{ iis_site_name }}"
+    physical_path: "{{ iis_site_path }}"
+    port: 80
+    state: started
+
+- name: Allow HTTP through firewall
+  community.windows.win_firewall_rule:
+    name: "IIS HTTP"
+    localport: 80
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: true
+
+- name: Allow HTTPS through firewall
+  community.windows.win_firewall_rule:
+    name: "IIS HTTPS"
+    localport: 443
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: true
