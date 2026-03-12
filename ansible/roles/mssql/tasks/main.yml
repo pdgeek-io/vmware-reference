@@ -46,13 +46,13 @@
 
 - name: Ensure SQL Server service is running
   ansible.windows.win_service:
-    name: "MSSQL${{ mssql_instance_name }}"
+    name: "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('MSSQLSERVER', 'MSSQL$' + mssql_instance_name) }}"
     start_mode: auto
     state: started
 
 - name: Ensure SQL Server Agent is running
   ansible.windows.win_service:
-    name: "SQLAgent${{ mssql_instance_name }}"
+    name: "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('SQLSERVERAGENT', 'SQLAgent$' + mssql_instance_name) }}"
     start_mode: auto
     state: started
 
@@ -68,14 +68,14 @@
 
 - name: Configure SQL Server max memory
   ansible.windows.win_command: >
-    sqlcmd -S localhost\{{ mssql_instance_name }} -U sa -P "{{ mssql_sa_password }}"
+    sqlcmd -S "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('localhost', 'localhost\\' + mssql_instance_name) }}" -U sa -P "{{ mssql_sa_password }}"
     -Q "EXEC sp_configure 'max server memory', {{ mssql_max_memory_mb }}; RECONFIGURE;"
   no_log: true
   when: mssql_max_memory_mb is defined
 
 - name: Create application database
   ansible.windows.win_command: >
-    sqlcmd -S localhost\{{ mssql_instance_name }} -U sa -P "{{ mssql_sa_password }}"
+    sqlcmd -S "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('localhost', 'localhost\\' + mssql_instance_name) }}" -U sa -P "{{ mssql_sa_password }}"
     -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name='{{ mssql_db_name }}') CREATE DATABASE [{{ mssql_db_name }}];"
   no_log: true
   when: mssql_db_name is defined

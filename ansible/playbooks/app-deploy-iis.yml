@@ -1,7 +1,7 @@
 ---
 # Deploy IIS web server on Windows Server
 - name: Deploy IIS Web Server
-  hosts: web_servers
+  hosts: windows_web_servers
 
   roles:
     - role: common-windows

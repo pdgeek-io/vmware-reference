@@ -1,7 +1,7 @@
 ---
 # Deploy .NET runtime and configure as an application server
 - name: Deploy .NET App Server
-  hosts: app_servers
+  hosts: windows_app_servers
 
   roles:
     - role: common-windows
