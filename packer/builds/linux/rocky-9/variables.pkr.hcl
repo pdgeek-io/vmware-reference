@@ -10,17 +10,27 @@ variable "network_name" { type = string; default = "DPG-Workload" }
 
 variable "iso_path" {
   type    = string
-  default = "[PowerStore-Templates] ISO/SERVER_EVAL_x64FRE_en-us_2025.iso"
+  default = "[PowerStore-Templates] ISO/Rocky-9-latest-x86_64-dvd.iso"
 }
 
-variable "vmtools_iso_path" {
-  description = "Path to VMware Tools ISO. Use vCenter's built-in copy or a datastore upload."
-  type        = string
-  default     = "[] /vmimages/tools-isoimages/windows.iso"
+variable "build_username" {
+  type    = string
+  default = "packer"
 }
 
 variable "build_password" {
   type      = string
   sensitive = true
   default   = "packer"
+}
+
+variable "build_password_hash" {
+  description = "SHA-512 hashed password for kickstart"
+  type        = string
+  sensitive   = true
+}
+
+variable "ssh_public_key" {
+  type    = string
+  default = ""
 }

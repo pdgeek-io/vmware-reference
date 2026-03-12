@@ -18,3 +18,19 @@
 - name: Display VMware Tools version
   ansible.builtin.debug:
     msg: "VMware Tools version: {{ vmtools_version.stdout }}"
+
+# Disk reclaim — fstrim sends SCSI UNMAP through pvscsi so PowerStore
+# can reclaim deleted blocks from thin-provisioned VMDKs.
+- name: Enable fstrim.timer for disk space reclaim
+  ansible.builtin.systemd:
+    name: fstrim.timer
+    enabled: true
+    state: started
+
+- name: Enable LVM issue_discards for TRIM passthrough
+  ansible.builtin.lineinfile:
+    path: /etc/lvm/lvm.conf
+    regexp: '^\s*issue_discards\s*='
+    line: '  issue_discards = 1'
+    backrefs: true
+  when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"

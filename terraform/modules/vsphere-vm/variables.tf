@@ -38,9 +38,39 @@ variable "cpu_count" {
   default = 2
 }
 
+variable "num_cores_per_socket" {
+  description = "Cores per socket. Set equal to cpu_count to keep all vCPUs in one NUMA node (recommended for DB)."
+  type        = number
+  default     = 1
+}
+
+variable "cpu_hot_add_enabled" {
+  description = "Allow adding vCPUs without downtime"
+  type        = bool
+  default     = false
+}
+
 variable "memory_mb" {
   type    = number
   default = 4096
+}
+
+variable "memory_hot_add_enabled" {
+  description = "Allow adding memory without downtime"
+  type        = bool
+  default     = false
+}
+
+variable "memory_reservation" {
+  description = "Memory reservation in MB. Set equal to memory_mb for DB VMs to prevent balloon reclaim."
+  type        = number
+  default     = 0
+}
+
+variable "latency_sensitivity" {
+  description = "Latency sensitivity: normal, low, medium, or high. Use high for latency-sensitive DB workloads."
+  type        = string
+  default     = "normal"
 }
 
 variable "os_disk_size_gb" {
@@ -54,10 +84,11 @@ variable "thin_provisioned" {
 }
 
 variable "disks" {
-  description = "Additional data disks"
+  description = "Additional data disks. Set controller (0-3) to spread disks across pvscsi controllers for max I/O."
   type = list(object({
-    label   = string
-    size_gb = number
+    label      = string
+    size_gb    = number
+    controller = optional(number, 0)
   }))
   default = []
 }
