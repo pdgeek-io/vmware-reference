@@ -90,8 +90,10 @@ demo: ## Launch interactive Day 2 operations menu
 	@echo "==> Launching Day 2 operations menu..."
 	pwsh -File powercli/scripts/self-service-menu.ps1
 
-portal: ## Start the self-service web portal
+portal: ## Start the self-service API portal (ITSM-ready)
 	@echo "==> Starting self-service API portal..."
+	@echo "    Docs: http://localhost:8080/api/docs"
+	@if [ -f $(CONFIG_DIR)/itsm.env ]; then . $(CONFIG_DIR)/itsm.env; fi
 	cd self-service/api && python -m uvicorn app:app --reload --port 8080
 
 # ─── Chargeback / Showback ───────────────────────────────────────────
