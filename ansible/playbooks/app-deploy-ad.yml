@@ -1,0 +1,14 @@
+---
+# Deploy Active Directory Domain Services
+# Promotes the server to a domain controller for campus identity services
+- name: Deploy Active Directory Domain Controller
+  hosts: domain_controllers
+
+  roles:
+    - role: common-windows
+    - role: active-directory
+
+  vars:
+    ad_domain_name: campus.lab.example.com
+    ad_netbios_name: CAMPUS
+    ad_role: first_dc

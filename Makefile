@@ -1,4 +1,4 @@
-.PHONY: init build-templates deploy-workloads deploy-three-tier demo portal chargeback setup-tags test validate destroy help
+.PHONY: init build-templates deploy-workloads deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -24,11 +24,14 @@ init: ## Initialize all tools (Terraform, Ansible Galaxy, Packer plugins)
 	packer init $(PACKER_DIR)/linux/ubuntu-2404/
 	packer init $(PACKER_DIR)/linux/rhel-9/
 	packer init $(PACKER_DIR)/windows/windows-server-2022/
+	packer init $(PACKER_DIR)/windows/windows-server-2025/
+	@echo "==> Initializing PowerScale Terraform stack..."
+	terraform -chdir=$(TERRAFORM_DIR)/04-research-storage init -upgrade
 	@echo "==> Initialization complete."
 
 # ─── VM Template Factory ─────────────────────────────────────────────
 
-build-templates: build-template-ubuntu build-template-rhel build-template-windows ## Build all VM templates
+build-templates: build-template-ubuntu build-template-rhel build-template-windows build-template-windows-2025 ## Build all VM templates
 
 build-template-ubuntu: ## Build Ubuntu 24.04 template
 	@echo "==> Building Ubuntu 24.04 template..."
@@ -51,6 +54,13 @@ build-template-windows: ## Build Windows Server 2022 template
 		-var-file="packer/config/common.pkrvars.hcl" \
 		$(PACKER_DIR)/windows/windows-server-2022/
 
+build-template-windows-2025: ## Build Windows Server 2025 template
+	@echo "==> Building Windows Server 2025 template..."
+	packer build -force \
+		-var-file="packer/config/vsphere.pkrvars.hcl" \
+		-var-file="packer/config/common.pkrvars.hcl" \
+		$(PACKER_DIR)/windows/windows-server-2025/
+
 # ─── VM Deployments ──────────────────────────────────────────────────
 
 deploy-workloads: ## Deploy VMs from templates via Terraform
@@ -62,6 +72,17 @@ deploy-three-tier: ## Deploy three-tier web application (nginx + Flask + Postgre
 	terraform -chdir=reference-vms/three-tier-web-app apply -auto-approve
 	ansible-playbook -i $(CONFIG_DIR)/inventory/hosts.yml \
 		reference-vms/three-tier-web-app/ansible-playbook.yml
+
+# ─── Research Storage (PowerScale) ────────────────────────────────────
+
+deploy-research-storage: ## Provision research NFS shares on PowerScale
+	@echo "==> Deploying research storage shares..."
+	terraform -chdir=$(TERRAFORM_DIR)/04-research-storage apply -auto-approve
+
+destroy-research-storage: ## Remove research shares from PowerScale
+	@echo "==> WARNING: This will remove all research shares."
+	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	terraform -chdir=$(TERRAFORM_DIR)/04-research-storage destroy -auto-approve
 
 # ─── Self-Service & Operations ───────────────────────────────────────
 

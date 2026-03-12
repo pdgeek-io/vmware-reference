@@ -11,10 +11,12 @@ $modulePath = Join-Path $PSScriptRoot "../modules/PDGeekRef"
 Import-Module $modulePath -Force
 
 # Source environment
-$envFile = Join-Path $PSScriptRoot "../../config/powerstore.env"
-if (Test-Path $envFile) {
-    Get-Content $envFile | Where-Object { $_ -match '^export\s+(\w+)=(.*)' } | ForEach-Object {
-        [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2].Trim('"'))
+foreach ($env in @("powerstore.env", "powerscale.env")) {
+    $envFile = Join-Path $PSScriptRoot "../../config/$env"
+    if (Test-Path $envFile) {
+        Get-Content $envFile | Where-Object { $_ -match '^export\s+(\w+)=(.*)' } | ForEach-Object {
+            [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2].Trim('"'))
+        }
     }
 }
 
@@ -24,19 +26,32 @@ function Show-Banner {
     Write-Host "  ╔══════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "  ║                                                                  ║" -ForegroundColor Cyan
     Write-Host "  ║    pdgeek.io — Day 2 VMware Operations                           ║" -ForegroundColor Cyan
-    Write-Host "  ║    PowerEdge  |  PowerStore  |  VMware VVF/VCF                   ║" -ForegroundColor Cyan
+    Write-Host "  ║    PowerEdge  |  PowerStore  |  PowerScale  |  VMware VVF/VCF     ║" -ForegroundColor Cyan
     Write-Host "  ║                                                                  ║" -ForegroundColor Cyan
     Write-Host "  ╚══════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
 }
 
 function Show-Menu {
-    Write-Host "  ── Self-Service VMs ───────────────────────────────────" -ForegroundColor Yellow
+    Write-Host "  ── Linux VMs ──────────────────────────────────────────" -ForegroundColor Yellow
     Write-Host "    1) Small Linux       (2 vCPU, 4 GB, Ubuntu 24.04)"
     Write-Host "    2) Medium Linux      (4 vCPU, 8 GB, RHEL 9)"
     Write-Host "    3) Large Database    (8 vCPU, 32 GB, PostgreSQL + PowerStore)"
+    Write-Host ""
+    Write-Host "  ── Windows VMs ────────────────────────────────────────" -ForegroundColor Yellow
     Write-Host "    4) Windows Standard  (4 vCPU, 8 GB, Server 2022)"
-    Write-Host "    5) Three-Tier App    (Web + App + Database)"
+    Write-Host "    W) Windows IIS       (4 vCPU, 8 GB, IIS Web Server)"
+    Write-Host "    S) Windows SQL       (8 vCPU, 32 GB, SQL Server + PowerStore)"
+    Write-Host "    N) Windows .NET App  (4 vCPU, 16 GB, .NET 8 Runtime)"
+    Write-Host "    D) Windows DC        (4 vCPU, 8 GB, Active Directory)"
+    Write-Host ""
+    Write-Host "  ── Compositions ───────────────────────────────────────" -ForegroundColor Yellow
+    Write-Host "    5) Three-Tier Linux  (nginx + Flask + PostgreSQL)"
+    Write-Host "    T) Three-Tier Windows (IIS + .NET + SQL Server)"
+    Write-Host ""
+    Write-Host "  ── Research Storage (PowerScale) ─────────────────────" -ForegroundColor Yellow
+    Write-Host "    R) New researcher share  (NFS, Entra ID/AD, quota)"
+    Write-Host "    G) Research share report  (grants, usage, expiration)"
     Write-Host ""
     Write-Host "  ── Guest Automation (VMware Tools) ────────────────────" -ForegroundColor Yellow
     Write-Host "    6) Run command in guest VM"
@@ -66,8 +81,15 @@ do {
     $choice = Read-Host "  Select an option"
 
     switch ($choice) {
-        { $_ -in "1","2","3","4" } {
-            $catalogMap = @{ "1" = "small-linux"; "2" = "medium-linux"; "3" = "large-database"; "4" = "windows-standard" }
+        { $_ -in "1","2","3","4","W","w","S","s","N","n","D","d" } {
+            $catalogMap = @{
+                "1" = "small-linux"; "2" = "medium-linux"; "3" = "large-database"
+                "4" = "windows-standard"
+                "W" = "windows-web-server"; "w" = "windows-web-server"
+                "S" = "windows-database"; "s" = "windows-database"
+                "N" = "windows-app-server"; "n" = "windows-app-server"
+                "D" = "windows-domain-controller"; "d" = "windows-domain-controller"
+            }
             $catalog = $catalogMap[$choice]
 
             Write-Host ""
@@ -100,7 +122,104 @@ do {
                 }
             }
 
-            Write-Host "`n  Three-tier app deployed and tagged!" -ForegroundColor Green
+            Write-Host "`n  Three-tier Linux app deployed and tagged!" -ForegroundColor Green
+            Write-Host "  Press Enter to continue..." -ForegroundColor Gray
+            Read-Host
+        }
+        { $_ -in "T","t" } {
+            Write-Host ""
+            $prefix = Read-Host "  Enter name prefix for the Windows 3-tier app (e.g., campus)"
+            $baseIP = Read-Host "  Enter base IP (last octet, e.g., 60 for .60/.61/.62)"
+            $dept = Read-Host "  Department (e.g., IT, Registrar)"
+
+            $base = [int]$baseIP
+            New-RefVM -Name "${prefix}-iis" -CatalogItem "windows-web-server" -IPAddress "10.0.200.$base"
+            New-RefVM -Name "${prefix}-dotnet" -CatalogItem "windows-app-server" -IPAddress "10.0.200.$($base+1)"
+            New-RefVM -Name "${prefix}-sql" -CatalogItem "windows-database" -IPAddress "10.0.200.$($base+2)"
+
+            if ($dept) {
+                @("${prefix}-iis", "${prefix}-dotnet", "${prefix}-sql") | ForEach-Object {
+                    Set-VMCostTags -VMName $_ -Department $dept -Project $prefix
+                }
+            }
+
+            Write-Host "`n  Three-tier Windows app deployed and tagged!" -ForegroundColor Green
+            Write-Host "  Press Enter to continue..." -ForegroundColor Gray
+            Read-Host
+        }
+        { $_ -in "R","r" } {
+            Write-Host ""
+            Write-Host "  ── New Researcher Share (PowerScale NFS) ──" -ForegroundColor Cyan
+            Write-Host "  Grant & PI Information:" -ForegroundColor Yellow
+            $shareName = Read-Host "  Share name (e.g., genomics-2025)"
+            $dept = Read-Host "  Department (e.g., Biology, Computer Science, Kinesiology)"
+            $piName = Read-Host "  PI name (e.g., Dr. Jane Smith)"
+            $piUser = Read-Host "  PI username (Entra ID / AD)"
+            $piEmail = Read-Host "  PI email"
+            $grantID = Read-Host "  Grant ID (e.g., NIH-R01-GM123456)"
+            $grantAgency = Read-Host "  Grant agency (NIH/NSF/DOE/DOD/USDA/state_of_texas/industry/internal)"
+            if (-not $grantAgency) { $grantAgency = "NIH" }
+            $grantExp = Read-Host "  Grant expiration (YYYY-MM-DD)"
+            $quota = Read-Host "  Quota in GB (default: 1000)"
+            if (-not $quota) { $quota = "1000" }
+
+            Write-Host ""
+            Write-Host "  Compliance & Classification:" -ForegroundColor Yellow
+            Write-Host "    Data classification per TAC 202:"
+            Write-Host "      public     — Open/published research data"
+            Write-Host "      controlled — Unpublished results, proposals (default)"
+            Write-Host "      confidential — FERPA, personnel, proprietary"
+            Write-Host "      restricted — HIPAA PHI, export-controlled, CUI"
+            $classification = Read-Host "  Classification [controlled]"
+            if (-not $classification) { $classification = "controlled" }
+
+            Write-Host "    Compliance flags (comma-separated, or Enter for none):"
+            Write-Host "      ferpa, hipaa, export_control, cui, pii, proprietary"
+            $flagsInput = Read-Host "  Flags"
+            $flags = @()
+            if ($flagsInput) {
+                $flags = $flagsInput -split ',' | ForEach-Object { $_.Trim() }
+            }
+
+            $irb = Read-Host "  IRB number (required for human subjects, Enter to skip)"
+            $iacuc = Read-Host "  IACUC number (required for animal research, Enter to skip)"
+            $tcp = ""
+            if ($flags -contains "export_control") {
+                $tcp = Read-Host "  Technology Control Plan reference number"
+            }
+            $costCenter = Read-Host "  Dept cost center (fallback billing, Enter to skip)"
+
+            $params = @{
+                Name               = $shareName
+                Department         = $dept
+                PIName             = $piName
+                PIUsername         = $piUser
+                PIEmail            = $piEmail
+                GrantID            = $grantID
+                GrantAgency        = $grantAgency
+                GrantExpiration    = $grantExp
+                QuotaGB            = [int]$quota
+                DataClassification = $classification
+            }
+            if ($flags.Count -gt 0) { $params.ComplianceFlags = $flags }
+            if ($irb) { $params.IRBNumber = $irb }
+            if ($iacuc) { $params.IACUCNumber = $iacuc }
+            if ($tcp) { $params.TechnologyControlPlan = $tcp }
+            if ($costCenter) { $params.CostCenter = $costCenter }
+
+            New-ResearcherShare @params
+
+            Write-Host "`n  Press Enter to continue..." -ForegroundColor Gray
+            Read-Host
+        }
+        { $_ -in "G","g" } {
+            Write-Host ""
+            $dept = Read-Host "  Filter by department (or press Enter for all)"
+            if ($dept) {
+                Get-ResearchShareReport -Department $dept
+            } else {
+                Get-ResearchShareReport
+            }
             Write-Host "  Press Enter to continue..." -ForegroundColor Gray
             Read-Host
         }

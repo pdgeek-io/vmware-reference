@@ -1,0 +1,79 @@
+# Researcher NFS Share — PowerScale self-service storage
+# Authenticated via Entra ID/AD with RFC2307 UID mapping
+# Mounted on Linux research VMs via NFS
+#
+# Compliance: TAC 202 data classification, federal grant data retention,
+# export control awareness, FERPA/HIPAA flags where applicable.
+name: Researcher Share
+description: "NFS share on PowerScale — Entra ID/AD auth, quota-managed, grant-tracked, compliance-aware"
+type: storage
+platform: powerscale
+
+storage:
+  protocol: nfs
+  default_quota_gb: 1000
+  max_quota_gb: 50000
+  snapshots: true
+  snapshot_retention_days: 30
+
+authentication:
+  provider: entra_id  # Microsoft Entra ID (formerly Azure AD)
+  method: rfc2307     # AD UID/GID mapping for NFS
+  access_zone: research
+
+metadata:
+  required:
+    - grant_id              # e.g., NIH-R01-GM123456, NSF-AGS-2345678
+    - grant_agency          # NIH, NSF, DOE, DOD, USDA, state_of_texas
+    - department            # e.g., Biology, Computer Science, Kinesiology
+    - pi_name               # Principal Investigator full name
+    - pi_username           # Entra ID / AD username (maps to NFS UID via RFC2307)
+    - pi_email              # PI contact email
+    - grant_expiration      # ISO 8601 date for lifecycle management
+    - data_classification   # public, controlled, confidential, restricted (per TAC 202)
+  optional:
+    - project_name          # Friendly project name
+    - co_pi_usernames       # Additional investigators with access
+    - irb_number            # IRB approval number (required for human subjects)
+    - iacuc_number          # IACUC protocol number (required for animal research)
+    - compliance_flags      # ferpa, hipaa, export_control, cui, pii, proprietary
+    - technology_control_plan  # TCP reference number (required for export-controlled)
+    - cost_center           # Departmental cost center (fallback if grant doesn't cover)
+    - sponsor_name          # External sponsor for industry-funded research
+    - data_management_plan  # true/false — required by most federal agencies
+
+chargeback:
+  rate_per_gb_month: 0.05       # Research storage rate (subsidized)
+  rate_per_gb_month_fast: 0.12  # SSD / performance tier
+  rate_per_gb_month_archive: 0.01  # Cold / archive tier
+  billable_to: grant_id         # Primary: charge to the research grant
+  fallback_billable: cost_center  # Secondary: departmental cost center
+  fiscal_year_start: "09-01"    # State fiscal year begins September 1
+
+lifecycle:
+  # Notifications escalate as grant expiration approaches
+  notify_days_before_expiry: [180, 90, 60, 30, 14, 7]
+  notify_recipients:
+    - pi_email
+    - department_admin
+    - research_compliance_office
+
+  # On grant expiration: read-only with grace period for PI to request extension
+  action_on_expiry: read_only
+  grace_period_days: 30
+
+  # Federal data retention (agency-specific, default 7 years)
+  retention_years: 7
+  archive_after_days: 180       # Move to cold tier 6 months past expiry
+  delete_requires_approval: true  # Records management must approve deletion
+
+  # Access review cycle
+  access_review_days: 180       # Semi-annual access review
+
+audit:
+  log_all_access: true          # State audit requirement
+  log_retention_years: 7        # Matches federal retention minimum
+  exportable: true              # Must be exportable for state auditors
+
+post_deploy:
+  ansible_playbook: ansible/playbooks/storage-deploy-researcher-share.yml

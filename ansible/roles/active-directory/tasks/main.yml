@@ -1,0 +1,74 @@
+---
+# Active Directory Domain Services installation and promotion
+
+- name: Install AD DS role
+  ansible.windows.win_feature:
+    name:
+      - AD-Domain-Services
+      - RSAT-AD-AdminCenter
+      - RSAT-ADDS-Tools
+      - DNS
+      - RSAT-DNS-Server
+    include_management_tools: true
+    state: present
+  register: adds_install
+
+- name: Reboot after ADDS install
+  ansible.windows.win_reboot:
+  when: adds_install.reboot_required
+
+- name: Promote to domain controller (new forest)
+  ansible.windows.win_domain:
+    dns_domain_name: "{{ ad_domain_name }}"
+    safe_mode_password: "{{ ad_safe_mode_password }}"
+    domain_netbios_name: "{{ ad_netbios_name }}"
+    install_dns: true
+    database_path: "{{ ad_ntds_path }}\\NTDS"
+    sysvol_path: "{{ ad_ntds_path }}\\SYSVOL"
+    log_path: "{{ ad_ntds_path }}\\Logs"
+  register: domain_promo
+  when: ad_role == "first_dc"
+
+- name: Promote to additional domain controller
+  ansible.windows.win_domain_controller:
+    dns_domain_name: "{{ ad_domain_name }}"
+    domain_admin_user: "{{ ad_domain_admin_user }}"
+    domain_admin_password: "{{ ad_domain_admin_password }}"
+    safe_mode_password: "{{ ad_safe_mode_password }}"
+    install_dns: true
+    database_path: "{{ ad_ntds_path }}\\NTDS"
+    sysvol_path: "{{ ad_ntds_path }}\\SYSVOL"
+    log_path: "{{ ad_ntds_path }}\\Logs"
+    state: domain_controller
+  register: domain_promo
+  when: ad_role == "additional_dc"
+
+- name: Reboot after domain promotion
+  ansible.windows.win_reboot:
+    reboot_timeout: 600
+  when: domain_promo.changed | default(false)
+
+- name: Wait for AD services to stabilize
+  ansible.windows.win_wait_for:
+    port: 389
+    timeout: 120
+  when: domain_promo.changed | default(false)
+
+- name: Create organizational units
+  community.windows.win_domain_ou:
+    name: "{{ item.name }}"
+    path: "{{ item.path | default(ad_base_dn) }}"
+    state: present
+  loop: "{{ ad_organizational_units }}"
+  when: ad_role == "first_dc"
+
+- name: Create service accounts
+  community.windows.win_domain_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    path: "OU=Service Accounts,{{ ad_base_dn }}"
+    state: present
+    password_never_expires: true
+  loop: "{{ ad_service_accounts }}"
+  when: ad_role == "first_dc"
+  no_log: true

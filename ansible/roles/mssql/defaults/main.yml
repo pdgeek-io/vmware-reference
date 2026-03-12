@@ -1,0 +1,14 @@
+---
+mssql_instance_name: MSSQLSERVER
+mssql_port: 1433
+mssql_version_path: "MSSQL16"  # SQL Server 2022
+mssql_install_path: "C:\\SQLInstall"
+mssql_data_path: "D:\\SQLData"
+mssql_log_path: "D:\\SQLLog"
+mssql_backup_path: "D:\\SQLBackup"
+mssql_service_account: "NT Service\\MSSQLSERVER"
+mssql_service_password: ""
+mssql_sysadmin_accounts: "BUILTIN\\Administrators"
+mssql_sa_password: "{{ vault_mssql_sa_password | default('ChangeMeInProduction!1') }}"
+mssql_max_memory_mb: 24576
+mssql_db_name: "campusdb"

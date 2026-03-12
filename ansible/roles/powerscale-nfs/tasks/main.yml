@@ -1,0 +1,79 @@
+---
+# pdgeek.io — PowerScale NFS Research Share
+# Configures AD authentication and NFS export on PowerScale
+# Uses dellemc.powerscale collection
+
+- name: Ensure AD provider is configured in access zone
+  dellemc.powerscale.ads:
+    onefs_host: "{{ powerscale_endpoint }}"
+    api_user: "{{ powerscale_user }}"
+    api_password: "{{ powerscale_password }}"
+    verify_ssl: false
+    domain_name: "{{ ad_domain }}"
+    instance_name: "{{ ad_domain }}"
+    ads_user: "{{ ad_join_user }}"
+    ads_password: "{{ ad_join_password }}"
+    state: present
+  run_once: true
+  when: configure_ad_provider | default(false)
+
+- name: Create research directory structure
+  dellemc.powerscale.filesystem:
+    onefs_host: "{{ powerscale_endpoint }}"
+    api_user: "{{ powerscale_user }}"
+    api_password: "{{ powerscale_password }}"
+    verify_ssl: false
+    path: "/ifs/research/{{ share_department }}/{{ share_name }}"
+    owner: "{{ share_pi_username }}"
+    group: "{{ share_department }}"
+    access_control: "0770"
+    recursive: true
+    state: present
+
+- name: Create NFS export for research share
+  dellemc.powerscale.nfs:
+    onefs_host: "{{ powerscale_endpoint }}"
+    api_user: "{{ powerscale_user }}"
+    api_password: "{{ powerscale_password }}"
+    verify_ssl: false
+    path: "/ifs/research/{{ share_department }}/{{ share_name }}"
+    access_zone: "{{ powerscale_access_zone | default('research') }}"
+    description: "Grant: {{ share_grant_id }} | PI: {{ share_pi_name }} | Dept: {{ share_department }}"
+    clients: "{{ share_allowed_clients | default(['10.0.200.0/24']) }}"
+    root_clients: "{{ share_root_clients | default([]) }}"
+    read_write_clients: "{{ share_allowed_clients | default(['10.0.200.0/24']) }}"
+    security_flavors:
+      - unix
+    map_root:
+      enabled: true
+      user: "nobody"
+    state: present
+
+- name: Set quota on research share
+  dellemc.powerscale.smartquota:
+    onefs_host: "{{ powerscale_endpoint }}"
+    api_user: "{{ powerscale_user }}"
+    api_password: "{{ powerscale_password }}"
+    verify_ssl: false
+    path: "/ifs/research/{{ share_department }}/{{ share_name }}"
+    quota_type: "directory"
+    hard_limit_size: "{{ share_quota_gb }}G"
+    advisory_limit_size: "{{ (share_quota_gb | int * 0.80) | int }}G"
+    soft_limit_size: "{{ (share_quota_gb | int * 0.90) | int }}G"
+    soft_grace_period: 604800
+    include_snapshots: false
+    state: present
+
+- name: Configure snapshot schedule
+  dellemc.powerscale.snapshotschedule:
+    onefs_host: "{{ powerscale_endpoint }}"
+    api_user: "{{ powerscale_user }}"
+    api_password: "{{ powerscale_password }}"
+    verify_ssl: false
+    name: "snap-{{ share_name }}"
+    path: "/ifs/research/{{ share_department }}/{{ share_name }}"
+    pattern: "ResearchSnap-%Y-%m-%d_%H:%M"
+    schedule: "Every day at 2:00 AM"
+    duration: "{{ snapshot_retention_days | default(30) | int * 86400 }}"
+    state: present
+  when: share_enable_snapshots | default(true)

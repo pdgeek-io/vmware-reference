@@ -1,0 +1,81 @@
+---
+# SQL Server installation on Windows Server
+# Supports SQL Server 2019 and 2022
+
+- name: Create SQL Server directories
+  ansible.windows.win_file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ mssql_data_path }}"
+    - "{{ mssql_log_path }}"
+    - "{{ mssql_backup_path }}"
+    - "{{ mssql_install_path }}"
+
+- name: Download SQL Server installer
+  ansible.windows.win_get_url:
+    url: "{{ mssql_installer_url }}"
+    dest: "{{ mssql_install_path }}\\SQLSetup.exe"
+  when: mssql_installer_url is defined
+
+- name: Install SQL Server
+  ansible.windows.win_command: >
+    {{ mssql_install_path }}\SQLSetup.exe
+    /Q
+    /IACCEPTSQLSERVERLICENSETERMS
+    /ACTION=Install
+    /FEATURES=SQLENGINE,CONN,SSMS
+    /INSTANCENAME={{ mssql_instance_name }}
+    /SQLSVCACCOUNT="{{ mssql_service_account }}"
+    /SQLSVCPASSWORD="{{ mssql_service_password }}"
+    /SQLSYSADMINACCOUNTS="{{ mssql_sysadmin_accounts }}"
+    /SQLUSERDBDIR="{{ mssql_data_path }}"
+    /SQLUSERDBLOGDIR="{{ mssql_log_path }}"
+    /SQLBACKUPDIR="{{ mssql_backup_path }}"
+    /TCPENABLED=1
+    /SECURITYMODE=SQL
+    /SAPWD="{{ mssql_sa_password }}"
+  args:
+    creates: "C:\\Program Files\\Microsoft SQL Server\\{{ mssql_version_path }}\\MSSQL\\Binn\\sqlservr.exe"
+  register: sql_install
+  no_log: true
+
+- name: Reboot after SQL install if needed
+  ansible.windows.win_reboot:
+  when: sql_install.changed
+
+- name: Ensure SQL Server service is running
+  ansible.windows.win_service:
+    name: "MSSQL${{ mssql_instance_name }}"
+    start_mode: auto
+    state: started
+
+- name: Ensure SQL Server Agent is running
+  ansible.windows.win_service:
+    name: "SQLAgent${{ mssql_instance_name }}"
+    start_mode: auto
+    state: started
+
+- name: Allow SQL Server through firewall
+  community.windows.win_firewall_rule:
+    name: "SQL Server {{ mssql_instance_name }}"
+    localport: "{{ mssql_port }}"
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: true
+
+- name: Configure SQL Server max memory
+  ansible.windows.win_command: >
+    sqlcmd -S localhost\{{ mssql_instance_name }} -U sa -P "{{ mssql_sa_password }}"
+    -Q "EXEC sp_configure 'max server memory', {{ mssql_max_memory_mb }}; RECONFIGURE;"
+  no_log: true
+  when: mssql_max_memory_mb is defined
+
+- name: Create application database
+  ansible.windows.win_command: >
+    sqlcmd -S localhost\{{ mssql_instance_name }} -U sa -P "{{ mssql_sa_password }}"
+    -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name='{{ mssql_db_name }}') CREATE DATABASE [{{ mssql_db_name }}];"
+  no_log: true
+  when: mssql_db_name is defined

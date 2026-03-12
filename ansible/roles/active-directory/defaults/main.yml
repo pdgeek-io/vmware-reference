@@ -1,0 +1,23 @@
+---
+ad_domain_name: campus.lab.example.com
+ad_netbios_name: CAMPUS
+ad_base_dn: "DC=campus,DC=lab,DC=example,DC=com"
+ad_safe_mode_password: "{{ vault_ad_safe_mode_password | default('ChangeMeInProduction!1') }}"
+ad_role: first_dc  # first_dc or additional_dc
+ad_ntds_path: "D:\\AD"
+ad_domain_admin_user: "CAMPUS\\Administrator"
+ad_domain_admin_password: "{{ vault_ad_admin_password }}"
+
+ad_organizational_units:
+  - name: Students
+  - name: Faculty
+  - name: Staff
+  - name: Service Accounts
+  - name: Workstations
+  - name: Servers
+
+ad_service_accounts:
+  - name: svc_sql
+    password: "{{ vault_svc_sql_password | default('ChangeMeInProduction!1') }}"
+  - name: svc_web
+    password: "{{ vault_svc_web_password | default('ChangeMeInProduction!1') }}"

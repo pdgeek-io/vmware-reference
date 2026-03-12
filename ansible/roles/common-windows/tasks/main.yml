@@ -1,0 +1,78 @@
+---
+# Base Windows Server configuration
+# Equivalent of the common role for Linux
+
+- name: Set hostname
+  ansible.windows.win_hostname:
+    name: "{{ inventory_hostname_short }}"
+  register: hostname_result
+
+- name: Reboot if hostname changed
+  ansible.windows.win_reboot:
+  when: hostname_result.reboot_required
+
+- name: Set timezone
+  community.windows.win_timezone:
+    timezone: "{{ win_timezone | default('Central Standard Time') }}"
+
+- name: Configure DNS client
+  ansible.windows.win_dns_client:
+    adapter_names: '*'
+    dns_servers: "{{ dns_servers }}"
+
+- name: Configure NTP
+  ansible.windows.win_command: >
+    w32tm /config /manualpeerlist:"{{ ntp_servers | join(' ') }}" /syncfromflags:manual /reliable:YES /update
+  changed_when: true
+
+- name: Enable Remote Desktop
+  ansible.windows.win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server
+    name: fDenyTSConnections
+    data: 0
+    type: dword
+
+- name: Allow RDP through firewall
+  community.windows.win_firewall_rule:
+    name: "Remote Desktop"
+    localport: 3389
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: true
+
+- name: Install common Windows features
+  ansible.windows.win_feature:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - NET-Framework-45-Core
+    - NET-Framework-45-Features
+    - RSAT-AD-Tools
+    - Telnet-Client
+
+- name: Ensure VMware Tools service is running
+  ansible.windows.win_service:
+    name: VMTools
+    start_mode: auto
+    state: started
+
+- name: Install Windows updates (security only)
+  ansible.windows.win_updates:
+    category_names:
+      - SecurityUpdates
+      - CriticalUpdates
+    state: installed
+    reboot: true
+  when: install_updates | default(false)
+
+- name: Configure Windows Event Log sizes
+  ansible.windows.win_eventlog:
+    name: "{{ item }}"
+    maximum_size: 64MB
+    retention_days: 30
+  loop:
+    - Application
+    - System
+    - Security

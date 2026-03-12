@@ -16,7 +16,8 @@ function New-RefVM {
         [string]$Name,
 
         [Parameter(Mandatory)]
-        [ValidateSet("small-linux", "medium-linux", "large-database", "windows-standard")]
+        [ValidateSet("small-linux", "medium-linux", "large-database", "windows-standard",
+                     "windows-web-server", "windows-database", "windows-app-server", "windows-domain-controller")]
         [string]$CatalogItem,
 
         [Parameter(Mandatory)]
@@ -67,6 +68,16 @@ function New-RefVM {
         $osSpec = New-OSCustomizationSpec -Name "temp-$Name" -Type NonPersistent `
             -OSType Linux -DnsServer $DNSServers -Domain "lab.example.com" `
             -NamingScheme Fixed -NamingPrefix $Name
+        $osSpec | Get-OSCustomizationNicMapping | Set-OSCustomizationNicMapping `
+            -IpMode UseStaticIP -IpAddress $IPAddress -SubnetMask "255.255.255.0" `
+            -DefaultGateway $Gateway | Out-Null
+    }
+    elseif ($catalog.os_family -eq "windows") {
+        $osSpec = New-OSCustomizationSpec -Name "temp-$Name" -Type NonPersistent `
+            -OSType Windows -FullName "Administrator" -OrgName "lab.example.com" `
+            -ChangeSid -AdminPassword $env:WINDOWS_ADMIN_PASSWORD `
+            -NamingScheme Fixed -NamingPrefix $Name `
+            -DnsServer $DNSServers -Domain "lab.example.com"
         $osSpec | Get-OSCustomizationNicMapping | Set-OSCustomizationNicMapping `
             -IpMode UseStaticIP -IpAddress $IPAddress -SubnetMask "255.255.255.0" `
             -DefaultGateway $Gateway | Out-Null
