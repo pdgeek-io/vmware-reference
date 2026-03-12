@@ -1,0 +1,23 @@
+# pdgeek.io — Chargeback Rate Card
+# Customize these rates to match your internal cost model.
+# Used by Get-VMChargeback to calculate showback/chargeback reports.
+
+# Compute
+CpuPerVCpuMonth: 15.00         # $ per vCPU per month
+MemoryPerGBMonth: 5.00          # $ per GB RAM per month
+
+# Storage
+StoragePerGBMonth: 0.10         # $ per GB standard datastore per month
+PowerStorePerGBMonth: 0.15      # $ per GB PowerStore-backed storage per month
+
+# Network
+NetworkPerVNICMonth: 2.00       # $ per vNIC per month
+
+# Optional: tiered pricing (override per resource pool)
+# tiers:
+#   Development:
+#     CpuPerVCpuMonth: 10.00
+#     MemoryPerGBMonth: 3.00
+#   Production:
+#     CpuPerVCpuMonth: 20.00
+#     MemoryPerGBMonth: 7.00

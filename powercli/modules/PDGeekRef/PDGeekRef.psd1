@@ -1,9 +1,9 @@
 @{
     RootModule        = 'PDGeekRef.psm1'
-    ModuleVersion     = '1.0.0'
+    ModuleVersion     = '1.1.0'
     GUID              = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
     Author            = 'pdgeek.io'
-    Description       = 'pdgeek.io — VMware Reference Architecture — Self-Service VM Provisioning'
+    Description       = 'pdgeek.io — Day 2 VMware operations: self-service VMs, guest automation, chargeback/showback'
     PowerShellVersion = '7.0'
 
     RequiredModules   = @(
@@ -11,10 +11,22 @@
     )
 
     FunctionsToExport = @(
+        # Self-Service VM Provisioning
         'New-RefVM',
         'New-VMFromTemplate',
+        'Remove-RefVM',
+
+        # Infrastructure
         'Set-PowerStoreDatastore',
         'Get-RefLabStatus',
-        'Remove-RefVM'
+
+        # Chargeback / Showback
+        'Get-VMChargeback',
+        'Set-VMCostTags',
+        'Get-VMLifecycle',
+
+        # Guest Automation (via VMware Tools)
+        'Invoke-GuestAutomation',
+        'Copy-GuestFile'
     )
 }
