@@ -2,7 +2,7 @@
 # Deploy SQL Server on Windows Server
 # Data and log volumes are PowerStore-backed for high-performance I/O
 - name: Deploy SQL Server
-  hosts: db_servers
+  hosts: windows_db_servers
 
   roles:
     - role: common-windows

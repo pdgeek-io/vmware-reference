@@ -9,6 +9,6 @@ mssql_backup_path: "D:\\SQLBackup"
 mssql_service_account: "NT Service\\MSSQLSERVER"
 mssql_service_password: ""
 mssql_sysadmin_accounts: "BUILTIN\\Administrators"
-mssql_sa_password: "{{ vault_mssql_sa_password | default('ChangeMeInProduction!1') }}"
+mssql_sa_password: "{{ vault_mssql_sa_password }}"  # Required — set in Ansible Vault
 mssql_max_memory_mb: 24576
 mssql_db_name: "campusdb"
