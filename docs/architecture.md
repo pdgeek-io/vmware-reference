@@ -1,8 +1,24 @@
 # Architecture Overview
 
-## pdgeek.io — VMware VVF/VCF Reference Architecture
+## pdgeek.io — University Research Computing Platform
 
-This document describes the full-stack reference architecture for VMware VVF/VCF on PowerEdge compute and PowerStore storage.
+This is a research computing platform that delivers same-day, grant-ready compute and storage to researchers. It happens to run on VMware VVF/VCF with PowerEdge and PowerStore — but to the researcher, it's just "my environment is ready."
+
+### Platform Positioning
+
+This platform delivers outcomes, not infrastructure:
+
+- **"Your environment is ready"** — not "we provisioned a VM"
+- **"Your grant requirements are met"** — not "we're NIST 800-171 compliant"
+- **"Your spend is tracked"** — not "we run chargeback reports"
+
+The underlying technology is an implementation detail. Researchers interact with a self-service catalog and get results. See the [Adoption Playbook](adoption-playbook.md) for how to position and sell this at your institution.
+
+---
+
+## Technical Reference
+
+The full-stack reference architecture for VMware VVF/VCF on PowerEdge compute and PowerStore storage.
 
 ## Hardware Bill of Materials
 

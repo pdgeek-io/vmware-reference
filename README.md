@@ -1,14 +1,40 @@
-# VMware Day 2 Operations
+# University Research Computing Platform
 
-> **Open-source Day 2 IaC for VMware VVF/VCF on PowerEdge + PowerStore + PowerScale**
-> Self-service VMs, research storage, ITSM integration, and chargeback — built for higher ed.
+> **Your grant is approved. Your environment is ready.**
+> Self-service compute, research storage, grant-based billing, and compliance — delivered as a platform, not a ticket queue.
 
 [![pdgeek.io](https://img.shields.io/badge/pdgeek.io-Day%202%20Ops-blue)](https://pdgeek.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-Your VCF/VVF environment is deployed. Now what? This repo handles everything after — standing up Linux and Windows VMs, provisioning research NFS shares on PowerScale with grant tracking, integrating with your ITSM (ServiceNow, TeamDynamix), managing CMDB assets, and tracking chargeback by department, grant, or cost center.
+This is an open-source reference architecture for building a self-funding research computing platform at a university. Researchers get same-day access to compute and storage. Grants fund the shared pool. Compliance is built in. IT gets visibility. Everyone wins.
+
+No more 100+ unmanaged servers in closets. No more zombie hardware from grants that ended 7 years ago. No more grad students as sysadmins.
 
 **Built by practitioners, for practitioners. Designed for Texas higher ed, useful everywhere.**
+
+### What Researchers Get
+
+- Compute and storage ready the day their grant starts — no PO, no hardware chase
+- Self-service catalog — pick a size, get an environment
+- Grant compliance met out of the box (NIST, FERPA, HIPAA, CUI, export control)
+- Their data managed, backed up, and archived when the grant ends
+
+### What the Institution Gets
+
+- Shadow IT consolidated into a managed, compliant platform
+- Every dollar tracked to a grant, audit-ready
+- Self-funding model — grants pay for usage, the pool grows
+- Reduced risk from unmanaged, unpatched, orphaned infrastructure
+
+### How to Sell This at Your University
+
+See the **[Adoption Playbook](docs/adoption-playbook.md)** — how to get executive buy-in, overcome department politics, handle the "I'll just use AWS" objection, and build a self-sustaining funding model.
+
+---
+
+## Under the Hood
+
+Open-source Day 2 IaC for VMware VVF/VCF on PowerEdge + PowerStore + PowerScale. Self-service VMs, research storage, ITSM integration, and chargeback.
 
 ## What This Covers (Day 2)
 
