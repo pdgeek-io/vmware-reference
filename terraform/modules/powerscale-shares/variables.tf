@@ -11,7 +11,7 @@ variable "shares" {
     pi_username      = string
     pi_email         = string
     grant_id         = string
-    grant_expiration = string  # ISO 8601 date (e.g., "2027-08-31")
+    grant_expiration = string # ISO 8601 date (e.g., "2027-08-31")
     quota_gb         = number
     allowed_clients  = list(string)
     root_clients     = optional(list(string), [])

@@ -4,7 +4,7 @@
 # =============================================================================
 
 # --- Volume Group (logical grouping for the reference lab) ---
-resource "powerstore_volume_group" "lab" {
+resource "powerstore_volumegroup" "lab" {
   name        = var.volume_group_name
   description = "Reference architecture volume group for ${var.environment}"
 
@@ -15,11 +15,12 @@ resource "powerstore_volume_group" "lab" {
 resource "powerstore_volume" "datastore" {
   for_each = var.volumes
 
-  name                = each.value.name
-  size                = each.value.size_gb * 1073741824 # Convert GB to bytes
-  description         = each.value.description
-  volume_group_id     = powerstore_volume_group.lab.id
-  appliance_id        = var.appliance_id
+  name                  = each.value.name
+  size                  = each.value.size_gb * 1073741824 # Convert GB to bytes
+  description           = each.value.description
+  volume_group_id       = powerstore_volumegroup.lab.id
+  host_group_id         = powerstore_hostgroup.cluster.id
+  appliance_id          = var.appliance_id
   performance_policy_id = each.value.performance_policy_id
 }
 
@@ -40,22 +41,11 @@ resource "powerstore_host" "esxi" {
 }
 
 # --- Host Group (cluster-level mapping) ---
-resource "powerstore_host_group" "cluster" {
+resource "powerstore_hostgroup" "cluster" {
   name        = var.host_group_name
   description = "ESXi cluster host group for ${var.cluster_name}"
 
   host_ids = [for h in powerstore_host.esxi : h.id]
-}
-
-# --- Volume-to-Host-Group Mapping ---
-resource "powerstore_volume" "mapping" {
-  for_each = powerstore_volume.datastore
-
-  name = each.value.name
-
-  host_group_id = powerstore_host_group.cluster.id
-
-  depends_on = [powerstore_host_group.cluster]
 }
 
 # --- Snapshot Rules (automated protection) ---
@@ -64,7 +54,6 @@ resource "powerstore_snapshotrule" "daily" {
 
   name     = "${var.environment}-daily-snap"
   interval = "One_Day"
-  time_of_day = "03:00"
 
   desired_retention = var.snapshot_retention_days * 86400 # Convert days to seconds
 }

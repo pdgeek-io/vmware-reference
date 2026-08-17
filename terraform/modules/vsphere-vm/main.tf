@@ -39,13 +39,19 @@ resource "vsphere_virtual_machine" "vm" {
   datastore_id     = data.vsphere_datastore.ds.id
   folder           = var.vm_folder
 
-  num_cpus = var.cpu_count
-  memory   = var.memory_mb
-  guest_id = data.vsphere_virtual_machine.template.guest_id
+  num_cpus               = var.cpu_count
+  num_cores_per_socket   = var.num_cores_per_socket
+  cpu_hot_add_enabled    = var.cpu_hot_add_enabled
+  memory                 = var.memory_mb
+  memory_hot_add_enabled = var.memory_hot_add_enabled
+  memory_reservation     = var.memory_reservation
+  guest_id               = data.vsphere_virtual_machine.template.guest_id
+  latency_sensitivity    = var.latency_sensitivity
 
-  firmware                = data.vsphere_virtual_machine.template.firmware
-  scsi_type               = data.vsphere_virtual_machine.template.scsi_type
-  scsi_controller_count   = max(1, length(var.disks))
+  firmware  = data.vsphere_virtual_machine.template.firmware
+  scsi_type = data.vsphere_virtual_machine.template.scsi_type
+  # One controller for OS disk + one per unique controller index in data disks
+  scsi_controller_count = max(1, length(var.disks) > 0 ? max([for d in var.disks : d.controller]...) + 1 : 1)
 
   # Network
   network_interface {
@@ -61,13 +67,16 @@ resource "vsphere_virtual_machine" "vm" {
   }
 
   # Additional Data Disks
+  # Disks land on pvscsi controllers based on unit_number:
+  #   controller 0 = unit 0-14, controller 1 = unit 15-29, etc.
+  # Set disk.controller to spread DB data/log/temp across controllers for max I/O.
   dynamic "disk" {
     for_each = var.disks
     content {
       label            = disk.value.label
       size             = disk.value.size_gb
       thin_provisioned = var.thin_provisioned
-      unit_number      = disk.key + 1
+      unit_number      = (disk.value.controller * 15) + (disk.key + 1)
     }
   }
 
@@ -91,14 +100,17 @@ resource "vsphere_virtual_machine" "vm" {
     }
   }
 
-  # Cloud-init via extra_config (if userdata provided)
-  dynamic "extra_config" {
-    for_each = var.userdata != "" ? { "guestinfo.userdata" = base64encode(var.userdata), "guestinfo.userdata.encoding" = "base64" } : {}
-    content {
-      key   = extra_config.key
-      value = extra_config.value
-    }
-  }
+  # Enable SCSI UNMAP so guest TRIM/fstrim passes through to the datastore,
+  # allowing thin-provisioned disks to reclaim deleted blocks on PowerStore.
+  extra_config = merge(
+    {
+      "disk.scsiUnmapAllowed" = "TRUE"
+    },
+    var.userdata != "" ? {
+      "guestinfo.userdata"          = base64encode(var.userdata)
+      "guestinfo.userdata.encoding" = "base64"
+    } : {}
+  )
 
   tags = var.tags
 

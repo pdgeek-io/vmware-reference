@@ -1,7 +1,12 @@
 ---
-# SQL Server installation on Windows Server
+# SQL Server installation and configuration on Windows Server
 # Supports SQL Server 2019 and 2022
 
+# --- Disk Initialization ---
+- name: Initialize PowerStore volumes for SQL Server
+  ansible.builtin.include_tasks: disks.yml
+
+# --- Directory Setup ---
 - name: Create SQL Server directories
   ansible.windows.win_file:
     path: "{{ item }}"
@@ -9,9 +14,26 @@
   loop:
     - "{{ mssql_data_path }}"
     - "{{ mssql_log_path }}"
+    - "{{ mssql_tempdb_path }}"
     - "{{ mssql_backup_path }}"
     - "{{ mssql_install_path }}"
 
+# --- Windows Prereqs ---
+- name: Grant Perform Volume Maintenance Tasks (instant file init)
+  ansible.windows.win_user_right:
+    name: SeManageVolumePrivilege
+    users:
+      - "{{ mssql_service_account }}"
+    action: add
+
+- name: Grant Lock Pages in Memory
+  ansible.windows.win_user_right:
+    name: SeLockMemoryPrivilege
+    users:
+      - "{{ mssql_service_account }}"
+    action: add
+
+# --- SQL Server Install ---
 - name: Download SQL Server installer
   ansible.windows.win_get_url:
     url: "{{ mssql_installer_url }}"
@@ -24,13 +46,18 @@
     /Q
     /IACCEPTSQLSERVERLICENSETERMS
     /ACTION=Install
-    /FEATURES=SQLENGINE,CONN,SSMS
+    /FEATURES=SQLENGINE,CONN
     /INSTANCENAME={{ mssql_instance_name }}
     /SQLSVCACCOUNT="{{ mssql_service_account }}"
     /SQLSVCPASSWORD="{{ mssql_service_password }}"
     /SQLSYSADMINACCOUNTS="{{ mssql_sysadmin_accounts }}"
     /SQLUSERDBDIR="{{ mssql_data_path }}"
     /SQLUSERDBLOGDIR="{{ mssql_log_path }}"
+    /SQLTEMPDBDIR="{{ mssql_tempdb_path }}"
+    /SQLTEMPDBLOGDIR="{{ mssql_tempdb_path }}"
+    /SQLTEMPDBFILECOUNT={{ mssql_tempdb_file_count }}
+    /SQLTEMPDBFILESIZE={{ mssql_tempdb_file_size_mb }}
+    /SQLTEMPDBFILEGROWTH={{ mssql_tempdb_file_growth_mb }}
     /SQLBACKUPDIR="{{ mssql_backup_path }}"
     /TCPENABLED=1
     /SECURITYMODE=SQL
@@ -44,6 +71,7 @@
   ansible.windows.win_reboot:
   when: sql_install.changed
 
+# --- Services ---
 - name: Ensure SQL Server service is running
   ansible.windows.win_service:
     name: "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('MSSQLSERVER', 'MSSQL$' + mssql_instance_name) }}"
@@ -56,6 +84,7 @@
     start_mode: auto
     state: started
 
+# --- Firewall ---
 - name: Allow SQL Server through firewall
   community.windows.win_firewall_rule:
     name: "SQL Server {{ mssql_instance_name }}"
@@ -66,16 +95,18 @@
     state: present
     enabled: true
 
-- name: Configure SQL Server max memory
-  ansible.windows.win_command: >
-    sqlcmd -S "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('localhost', 'localhost\\' + mssql_instance_name) }}" -U sa -P "{{ mssql_sa_password }}"
-    -Q "EXEC sp_configure 'max server memory', {{ mssql_max_memory_mb }}; RECONFIGURE;"
-  no_log: true
-  when: mssql_max_memory_mb is defined
+# --- Best Practice Configuration ---
+- name: Configure SQL Server best practices
+  ansible.builtin.include_tasks: configure.yml
 
+# --- Backup Jobs ---
+- name: Configure SQL Server backup jobs
+  ansible.builtin.include_tasks: backups.yml
+
+# --- Optional Application Database ---
 - name: Create application database
   ansible.windows.win_command: >
     sqlcmd -S "{{ (mssql_instance_name == 'MSSQLSERVER') | ternary('localhost', 'localhost\\' + mssql_instance_name) }}" -U sa -P "{{ mssql_sa_password }}"
     -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name='{{ mssql_db_name }}') CREATE DATABASE [{{ mssql_db_name }}];"
   no_log: true
-  when: mssql_db_name is defined
+  when: mssql_db_name | length > 0

@@ -1,24 +1,40 @@
 # Windows Database — SQL Server for higher ed ERP, SIS, LMS backends
 name: Windows Database
-description: Windows Server 2022 + SQL Server — 8 vCPU, 32 GB RAM, 100 GB OS + 200 GB PowerStore data volume
+description: Windows Server 2022 + SQL Server 2022 — 8 vCPU, 32 GB RAM, separate PowerStore volumes for data, log, tempdb, backup
 template: tpl-windows-2022
 os_family: windows
 
 compute:
   cpu: 8
+  cores_per_socket: 8        # Single NUMA node — all cores visible to SQL
   memory_mb: 32768
+  memory_reservation_mb: 32768  # Prevent balloon reclaim on DB VMs
+  cpu_hot_add: false          # Disable for DB — causes NUMA rebalance
+  memory_hot_add: false       # Disable for DB — causes NUMA rebalance
 
 storage:
   os_disk_gb: 100
   data_disks:
     - label: sqldata
       size_gb: 200
+      controller: 1           # Separate SCSI controller for data I/O
       powerstore_volume: true
-      description: "SQL Server data volume on PowerStore"
+      description: "SQL Server data — D: drive, 64K NTFS"
     - label: sqllog
       size_gb: 50
+      controller: 2           # Separate SCSI controller for log I/O
       powerstore_volume: true
-      description: "SQL Server log volume on PowerStore"
+      description: "SQL Server log — E: drive, 64K NTFS"
+    - label: sqltempdb
+      size_gb: 50
+      controller: 2
+      powerstore_volume: true
+      description: "SQL Server tempdb — F: drive, 64K NTFS"
+    - label: sqlbackup
+      size_gb: 100
+      controller: 0           # Backup shares OS controller — not latency sensitive
+      powerstore_volume: true
+      description: "SQL Server backup — G: drive"
 
 network:
   port_group: DPG-Workload
