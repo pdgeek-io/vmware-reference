@@ -10,10 +10,10 @@ output "volume_wwns" {
 
 output "host_group_id" {
   description = "Host group ID for cluster-level volume mapping"
-  value       = powerstore_host_group.cluster.id
+  value       = powerstore_hostgroup.cluster.id
 }
 
 output "volume_group_id" {
   description = "Volume group ID"
-  value       = powerstore_volume_group.lab.id
+  value       = powerstore_volumegroup.lab.id
 }
