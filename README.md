@@ -54,6 +54,8 @@ Ansible owns configuration and Day 2 operations: OS baseline, agents, patching, 
 
 ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhook adapter submits the request; the platform validates, plans, executes approved automation, updates CMDB/chargeback, and posts evidence back.
 
+For lab and PoC validation, the [VIS lab validation path](docs/vis-lab-validation.md) can provide VCF 9.1 supporting services while the repo proves service-catalog workflows such as VM provisioning, database deployment, application deployment, evidence capture, and UX feedback.
+
 ## Under the Hood
 
 Validated Day 2 private cloud automation for VMware VVF/VCF on an already-deployed PowerEdge + PowerStore + PowerScale architecture. Self-service VMs, research storage, ITSM integration, DNS/IPAM, multi-tenancy, CMDB, and chargeback.
