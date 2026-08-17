@@ -53,10 +53,8 @@ done
 # --- Ansible ---
 echo ""
 echo "── Ansible ──"
-if ! ansible-galaxy collection list dellemc.powerstore >/dev/null 2>&1; then
-    echo "  [INFO] Installing Ansible Galaxy collections from ansible/requirements.yml"
-    ansible-galaxy collection install -r ansible/requirements.yml >/dev/null
-fi
+echo "  [INFO] Installing Ansible Galaxy collections from ansible/requirements.yml"
+ansible-galaxy collection install -r ansible/requirements.yml >/dev/null
 for playbook in ansible/playbooks/*.yml; do
     name=$(basename "$playbook")
     if ANSIBLE_CONFIG=ansible/ansible.cfg ansible-playbook --syntax-check "$playbook" >/dev/null 2>&1; then
