@@ -54,7 +54,7 @@ Ansible owns configuration and Day 2 operations: OS baseline, agents, patching, 
 
 ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhook adapter submits the request; the platform validates, plans, executes approved automation, updates CMDB/chargeback, and posts evidence back.
 
-For lab and PoC validation, the [VIS lab validation path](docs/vis-lab-validation.md) can provide VCF 9.1 supporting services while the repo proves service-catalog workflows such as VM provisioning, database deployment, application deployment, evidence capture, and UX feedback.
+For lab and PoC validation, the [vSphere lab validation path](docs/vsphere-lab-validation.md) checks the minimal ESXi + vCenter readiness surface while the repo proves service-catalog workflows such as VM provisioning, database deployment, application deployment, evidence capture, and UX feedback.
 
 ## Under the Hood
 
