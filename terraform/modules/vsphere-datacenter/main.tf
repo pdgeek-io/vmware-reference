@@ -18,10 +18,10 @@ resource "vsphere_compute_cluster" "cluster" {
   drs_automation_level = "fullyAutomated"
 
   # HA configuration
-  ha_enabled                                    = var.ha_enabled
-  ha_admission_control_policy                   = "resourcePercentage"
-  ha_admission_control_host_failure_tolerance   = 1
-  ha_admission_control_resource_percentage_cpu  = 25
+  ha_enabled                                      = var.ha_enabled
+  ha_admission_control_policy                     = "resourcePercentage"
+  ha_admission_control_host_failure_tolerance     = 1
+  ha_admission_control_resource_percentage_cpu    = 25
   ha_admission_control_resource_percentage_memory = 25
 
   # vSAN (if applicable)

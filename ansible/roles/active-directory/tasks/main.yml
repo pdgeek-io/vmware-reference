@@ -18,7 +18,7 @@
   when: adds_install.reboot_required
 
 - name: Promote to domain controller (new forest)
-  ansible.windows.win_domain:
+  microsoft.ad.domain:
     dns_domain_name: "{{ ad_domain_name }}"
     safe_mode_password: "{{ ad_safe_mode_password }}"
     domain_netbios_name: "{{ ad_netbios_name }}"
@@ -30,7 +30,7 @@
   when: ad_role == "first_dc"
 
 - name: Promote to additional domain controller
-  ansible.windows.win_domain_controller:
+  microsoft.ad.domain_controller:
     dns_domain_name: "{{ ad_domain_name }}"
     domain_admin_user: "{{ ad_domain_admin_user }}"
     domain_admin_password: "{{ ad_domain_admin_password }}"
@@ -55,7 +55,7 @@
   when: domain_promo.changed | default(false)
 
 - name: Create organizational units
-  community.windows.win_domain_ou:
+  microsoft.ad.ou:
     name: "{{ item.name }}"
     path: "{{ item.path | default(ad_base_dn) }}"
     state: present
@@ -63,7 +63,7 @@
   when: ad_role == "first_dc"
 
 - name: Create service accounts
-  community.windows.win_domain_user:
+  microsoft.ad.user:
     name: "{{ item.name }}"
     password: "{{ item.password }}"
     path: "OU=Service Accounts,{{ ad_base_dn }}"
