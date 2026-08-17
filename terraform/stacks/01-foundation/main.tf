@@ -9,9 +9,9 @@
 module "powerstore" {
   source = "../../modules/powerstore-volumes"
 
-  environment      = var.environment
+  environment       = var.environment
   volume_group_name = "${var.environment}-vmfs-vg"
-  cluster_name     = var.cluster_name
+  cluster_name      = var.cluster_name
 
   volumes = {
     vmfs-01 = {
@@ -38,8 +38,8 @@ module "powerstore" {
     }
   ]
 
-  host_group_name        = "${var.cluster_name}-hg"
-  create_snapshot_rule   = true
+  host_group_name         = "${var.cluster_name}-hg"
+  create_snapshot_rule    = true
   snapshot_retention_days = 7
 }
 
@@ -58,9 +58,9 @@ module "vsphere_datacenter" {
 
   # Map PowerStore volumes as VMFS datastores
   datastore_disks = {
-    "PowerStore-DS01"       = "naa.${module.powerstore.volume_wwns["vmfs-01"]}"
-    "PowerStore-DS02"       = "naa.${module.powerstore.volume_wwns["vmfs-02"]}"
-    "PowerStore-Templates"  = "naa.${module.powerstore.volume_wwns["vmfs-templates"]}"
+    "PowerStore-DS01"      = "naa.${module.powerstore.volume_wwns["vmfs-01"]}"
+    "PowerStore-DS02"      = "naa.${module.powerstore.volume_wwns["vmfs-02"]}"
+    "PowerStore-Templates" = "naa.${module.powerstore.volume_wwns["vmfs-templates"]}"
   }
 
   resource_pool_names = ["Development", "Staging", "Production", "Templates"]

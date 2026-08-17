@@ -15,12 +15,13 @@ echo ""
 echo "── Terraform ──"
 for dir in terraform/modules/*/; do
     name=$(basename "$dir")
-    if terraform -chdir="$dir" validate -no-color 2>/dev/null; then
+    if terraform -chdir="$dir" init -backend=false -input=false -no-color >/dev/null 2>&1 \
+        && terraform -chdir="$dir" validate -no-color >/dev/null 2>&1; then
         echo "  [PASS] $name"
-        ((PASS++))
+        PASS=$((PASS + 1))
     else
         echo "  [FAIL] $name"
-        ((FAIL++))
+        FAIL=$((FAIL + 1))
     fi
 done
 
@@ -29,10 +30,10 @@ echo ""
 echo "── Terraform Format ──"
 if terraform fmt -check -recursive terraform/ >/dev/null 2>&1; then
     echo "  [PASS] All files formatted correctly"
-    ((PASS++))
+    PASS=$((PASS + 1))
 else
     echo "  [FAIL] Some files need formatting (run: terraform fmt -recursive terraform/)"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Packer ---
@@ -42,24 +43,28 @@ for dir in packer/builds/*/*/; do
     name=$(basename "$dir")
     if packer validate -syntax-only "$dir" 2>/dev/null; then
         echo "  [PASS] $name"
-        ((PASS++))
+        PASS=$((PASS + 1))
     else
         echo "  [FAIL] $name"
-        ((FAIL++))
+        FAIL=$((FAIL + 1))
     fi
 done
 
 # --- Ansible ---
 echo ""
 echo "── Ansible ──"
+if ! ansible-galaxy collection list dellemc.powerstore >/dev/null 2>&1; then
+    echo "  [INFO] Installing Ansible Galaxy collections from ansible/requirements.yml"
+    ansible-galaxy collection install -r ansible/requirements.yml >/dev/null
+fi
 for playbook in ansible/playbooks/*.yml; do
     name=$(basename "$playbook")
-    if ansible-playbook --syntax-check "$playbook" >/dev/null 2>&1; then
+    if ANSIBLE_CONFIG=ansible/ansible.cfg ansible-playbook --syntax-check "$playbook" >/dev/null 2>&1; then
         echo "  [PASS] $name"
-        ((PASS++))
+        PASS=$((PASS + 1))
     else
         echo "  [FAIL] $name"
-        ((FAIL++))
+        FAIL=$((FAIL + 1))
     fi
 done
 

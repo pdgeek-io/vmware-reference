@@ -1,12 +1,14 @@
-# University Research Computing Platform
+# PD Geek IO Validated Private Cloud
 
 > **Your grant is approved. Your environment is ready.**
-> Self-service compute, research storage, grant-based billing, and compliance — delivered as a platform, not a ticket queue.
+> Dell hardware. VMware private cloud. ITSM-driven self-service. Day 2 operations as code.
 
 [![pdgeek.io](https://img.shields.io/badge/pdgeek.io-Day%202%20Ops-blue)](https://pdgeek.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-This is an open-source reference architecture for building a self-funding research computing platform at a university. Researchers get same-day access to compute and storage. Grants fund the shared pool. Compliance is built in. IT gets visibility. Everyone wins.
+PD Geek IO is a validated private cloud reference architecture for institutions that want governed self-service on Dell hardware and VMware VVF/VCF. It uses Terraform to create infrastructure, Ansible to configure and operate it, and ITSM workflows to keep approvals, evidence, CMDB, and chargeback aligned.
+
+The higher-ed research computing scenario is the first packaged use case. Researchers get same-day access to compute and storage. Grants fund the shared pool. Compliance is built in. IT gets visibility. Everyone wins.
 
 No more 100+ unmanaged servers in closets. No more zombie hardware from grants that ended 7 years ago. No more grad students as sysadmins.
 
@@ -32,9 +34,27 @@ See the **[Adoption Playbook](docs/adoption-playbook.md)** — how to get execut
 
 ---
 
+## Product Positioning
+
+Open-source Day 2 IaC for a validated private cloud built around:
+
+- Dell PowerEdge compute
+- Dell PowerStore block storage
+- Dell PowerScale file storage
+- VMware VVF/VCF private cloud
+- Infoblox or equivalent enterprise DNS/IPAM/DDI
+- ITSM-driven service requests and approvals
+- Git-based automation, validation, and evidence
+
+Terraform owns infrastructure state: vSphere objects, VM lifecycle, networks, DNS/IPAM records, storage objects, tags, and placement.
+
+Ansible owns configuration and Day 2 operations: OS baseline, agents, patching, application deployment, service validation, backup checks, drift reports, remediation, and evidence.
+
+ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhook adapter submits the request; the platform validates, plans, executes approved automation, updates CMDB/chargeback, and posts evidence back.
+
 ## Under the Hood
 
-Open-source Day 2 IaC for VMware VVF/VCF on PowerEdge + PowerStore + PowerScale. Self-service VMs, research storage, ITSM integration, and chargeback.
+Validated private cloud automation for VMware VVF/VCF on PowerEdge + PowerStore + PowerScale. Self-service VMs, research storage, ITSM integration, DNS/IPAM, multi-tenancy, CMDB, and chargeback.
 
 ## What This Covers (Day 2)
 

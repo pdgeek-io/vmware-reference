@@ -39,6 +39,9 @@ jobs:
             packer validate -syntax-only "$dir" || true
           done
 
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
       - name: Ansible Lint
         uses: ansible/ansible-lint-action@v6
         with:
