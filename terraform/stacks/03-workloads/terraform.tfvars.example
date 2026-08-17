@@ -18,15 +18,36 @@ vms = {
     data_disks    = []
   }
   "db-01" = {
-    template      = "tpl-ubuntu-2404"
+    template      = "tpl-rhel-9"
     resource_pool = "Development"
     folder        = "Reference-VMs/Database"
-    cpu           = 4
-    memory_mb     = 16384
-    os_disk_gb    = 60
-    ip_address    = "10.0.200.30"
+
+    # CPU: all cores in one socket to stay within a single NUMA node
+    cpu                  = 4
+    num_cores_per_socket = 4
+    cpu_hot_add          = true
+
+    # Memory: reserve 100% to prevent balloon driver from reclaiming DB buffer cache
+    memory_mb          = 16384
+    memory_hot_add     = true
+    memory_reservation = 16384
+
+    # Latency: high disables co-stop, halt-polling, and CPU scheduler optimizations
+    latency_sensitivity = "high"
+
+    os_disk_gb = 60
+    ip_address = "10.0.200.30"
+
+    # Spread DB disks across pvscsi controllers for maximum I/O throughput.
+    # Each controller gets its own queue (254 outstanding I/Os each).
+    #   controller 0 = OS disk (automatic)
+    #   controller 1 = data
+    #   controller 2 = logs (sequential write, no contention with data)
+    #   controller 3 = temp/swap
     data_disks = [
-      { label = "data", size_gb = 200 }
+      { label = "pgdata", size_gb = 200, controller = 1 },
+      { label = "pglog",  size_gb = 50,  controller = 2 },
+      { label = "pgtmp",  size_gb = 50,  controller = 3 },
     ]
   }
 }

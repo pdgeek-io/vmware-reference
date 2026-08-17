@@ -27,3 +27,6 @@ autoinstall:
   late-commands:
     - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
     - chmod 0440 /target/etc/sudoers.d/${username}
+    # Enable weekly TRIM/UNMAP for thin-provisioned disk reclaim on PowerStore
+    - curtin in-target -- systemctl enable fstrim.timer
+    - "curtin in-target -- sed -i 's/^.*issue_discards = .*/\\tissue_discards = 1/' /etc/lvm/lvm.conf"

@@ -1,14 +1,62 @@
-# VMware Day 2 Operations
+# PD Geek IO Validated Private Cloud
 
-> **Open-source Day 2 IaC for VMware VVF/VCF on PowerEdge + PowerStore + PowerScale**
-> Self-service VMs, research storage, ITSM integration, and chargeback — built for higher ed.
+> **Your grant is approved. Your environment is ready.**
+> Dell hardware. VMware private cloud. ITSM-driven self-service. Day 2 operations as code.
 
 [![pdgeek.io](https://img.shields.io/badge/pdgeek.io-Day%202%20Ops-blue)](https://pdgeek.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-Your VCF/VVF environment is deployed. Now what? This repo handles everything after — standing up Linux and Windows VMs, provisioning research NFS shares on PowerScale with grant tracking, integrating with your ITSM (ServiceNow, TeamDynamix), managing CMDB assets, and tracking chargeback by department, grant, or cost center.
+PD Geek IO is a validated private cloud automation framework for institutions that want governed self-service on Dell hardware and VMware VVF/VCF. It assumes the private cloud has already been brought up against the appropriate Dell, VMware, and network/storage reference architecture, then validates and operates that environment with repeatable automation and evidence.
+
+The higher-ed research computing scenario is the first packaged use case. Researchers get same-day access to compute and storage. Grants fund the shared pool. Compliance is built in. IT gets visibility. Everyone wins.
+
+No more 100+ unmanaged servers in closets. No more zombie hardware from grants that ended 7 years ago. No more grad students as sysadmins.
 
 **Built by practitioners, for practitioners. Designed for Texas higher ed, useful everywhere.**
+
+### What Researchers Get
+
+- Compute and storage ready the day their grant starts — no PO, no hardware chase
+- Self-service catalog — pick a size, get an environment
+- Grant compliance met out of the box (NIST, FERPA, HIPAA, CUI, export control)
+- Their data managed, backed up, and archived when the grant ends
+
+### What the Institution Gets
+
+- Shadow IT consolidated into a managed, compliant platform
+- Every dollar tracked to a grant, audit-ready
+- Self-funding model — grants pay for usage, the pool grows
+- Reduced risk from unmanaged, unpatched, orphaned infrastructure
+
+### How to Sell This at Your University
+
+See the **[Adoption Playbook](docs/adoption-playbook.md)** — how to get executive buy-in, overcome department politics, handle the "I'll just use AWS" objection, and build a self-sustaining funding model.
+
+---
+
+## Product Positioning
+
+Open-source Day 2 IaC for a validated private cloud built around:
+
+- Dell PowerEdge compute
+- Dell PowerStore block storage
+- Dell PowerScale file storage
+- VMware VVF/VCF private cloud
+- Infoblox or equivalent enterprise DNS/IPAM/DDI
+- ITSM-driven service requests and approvals
+- Git-based automation, validation, and evidence
+
+Validation boundary: Dell, VMware, storage, and network bring-up is treated as a prerequisite. This repo does not replace vendor deployment guidance, VCF bring-up, or Dell validated designs. It validates that the resulting platform exposes the expected Day 2 control points and then drives customer-facing automation from those control points.
+
+Terraform owns infrastructure state after the platform exists: vSphere objects, VM lifecycle, networks, DNS/IPAM records, storage objects, tags, and placement.
+
+Ansible owns configuration and Day 2 operations: OS baseline, agents, patching, application deployment, service validation, backup checks, drift reports, remediation, and evidence.
+
+ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhook adapter submits the request; the platform validates, plans, executes approved automation, updates CMDB/chargeback, and posts evidence back.
+
+## Under the Hood
+
+Validated Day 2 private cloud automation for VMware VVF/VCF on an already-deployed PowerEdge + PowerStore + PowerScale architecture. Self-service VMs, research storage, ITSM integration, DNS/IPAM, multi-tenancy, CMDB, and chargeback.
 
 ## What This Covers (Day 2)
 
@@ -49,7 +97,8 @@ Your VCF/VVF environment is deployed. Now what? This repo handles everything aft
 
 - VCF deployment, SDDC Manager bring-up, workload domain creation
 - ESXi installation, vCenter deployment, cluster creation
-- Those are automated by VCF itself — this repo picks up after that
+- Hardware, storage, network, and platform design validation owned by Dell, VMware, and the customer's architecture process
+- Those are automated by VCF itself or by vendor-aligned Day 0/1 processes. This repo picks up after that baseline exists.
 
 ## Quick Start
 

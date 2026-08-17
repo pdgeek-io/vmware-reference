@@ -57,10 +57,18 @@
         <AcceptEula>true</AcceptEula>
       </UserData>
     </component>
+    <!-- Load pvscsi driver from VMware Tools ISO. Multiple paths cover varying
+         CD-ROM drive letter assignments (depends on EFI partition layout). -->
     <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <DriverPaths>
         <PathAndCredentials wcm:action="add" wcm:keyValue="1">
           <Path>D:\Program Files\VMware\VMware Tools\Drivers\pvscsi</Path>
+        </PathAndCredentials>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="2">
+          <Path>E:\Program Files\VMware\VMware Tools\Drivers\pvscsi</Path>
+        </PathAndCredentials>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="3">
+          <Path>F:\Program Files\VMware\VMware Tools\Drivers\pvscsi</Path>
         </PathAndCredentials>
       </DriverPaths>
     </component>

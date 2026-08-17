@@ -23,5 +23,5 @@ output "share_metadata" {
     pi_email         = v.pi_email
     grant_expiration = v.grant_expiration
     quota_gb         = v.quota_gb
-  }}
+  } }
 }
