@@ -6,7 +6,7 @@
 [![pdgeek.io](https://img.shields.io/badge/pdgeek.io-Day%202%20Ops-blue)](https://pdgeek.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-PD Geek IO is a validated private cloud reference architecture for institutions that want governed self-service on Dell hardware and VMware VVF/VCF. It uses Terraform to create infrastructure, Ansible to configure and operate it, and ITSM workflows to keep approvals, evidence, CMDB, and chargeback aligned.
+PD Geek IO is a validated private cloud automation framework for institutions that want governed self-service on Dell hardware and VMware VVF/VCF. It assumes the private cloud has already been brought up against the appropriate Dell, VMware, and network/storage reference architecture, then validates and operates that environment with repeatable automation and evidence.
 
 The higher-ed research computing scenario is the first packaged use case. Researchers get same-day access to compute and storage. Grants fund the shared pool. Compliance is built in. IT gets visibility. Everyone wins.
 
@@ -46,7 +46,9 @@ Open-source Day 2 IaC for a validated private cloud built around:
 - ITSM-driven service requests and approvals
 - Git-based automation, validation, and evidence
 
-Terraform owns infrastructure state: vSphere objects, VM lifecycle, networks, DNS/IPAM records, storage objects, tags, and placement.
+Validation boundary: Dell, VMware, storage, and network bring-up is treated as a prerequisite. This repo does not replace vendor deployment guidance, VCF bring-up, or Dell validated designs. It validates that the resulting platform exposes the expected Day 2 control points and then drives customer-facing automation from those control points.
+
+Terraform owns infrastructure state after the platform exists: vSphere objects, VM lifecycle, networks, DNS/IPAM records, storage objects, tags, and placement.
 
 Ansible owns configuration and Day 2 operations: OS baseline, agents, patching, application deployment, service validation, backup checks, drift reports, remediation, and evidence.
 
@@ -54,7 +56,7 @@ ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhoo
 
 ## Under the Hood
 
-Validated private cloud automation for VMware VVF/VCF on PowerEdge + PowerStore + PowerScale. Self-service VMs, research storage, ITSM integration, DNS/IPAM, multi-tenancy, CMDB, and chargeback.
+Validated Day 2 private cloud automation for VMware VVF/VCF on an already-deployed PowerEdge + PowerStore + PowerScale architecture. Self-service VMs, research storage, ITSM integration, DNS/IPAM, multi-tenancy, CMDB, and chargeback.
 
 ## What This Covers (Day 2)
 
@@ -95,7 +97,8 @@ Validated private cloud automation for VMware VVF/VCF on PowerEdge + PowerStore 
 
 - VCF deployment, SDDC Manager bring-up, workload domain creation
 - ESXi installation, vCenter deployment, cluster creation
-- Those are automated by VCF itself — this repo picks up after that
+- Hardware, storage, network, and platform design validation owned by Dell, VMware, and the customer's architecture process
+- Those are automated by VCF itself or by vendor-aligned Day 0/1 processes. This repo picks up after that baseline exists.
 
 ## Quick Start
 
