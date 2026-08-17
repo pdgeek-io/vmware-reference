@@ -1,4 +1,4 @@
-.PHONY: init build-templates deploy-workloads deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate destroy help
+.PHONY: init build-templates deploy-workloads deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate validate-vsphere-lab destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -118,6 +118,9 @@ chargeback: ## Generate chargeback report
 
 validate: ## Validate all Terraform, Packer, and Ansible configs
 	@bash tests/scripts/validate-all.sh
+
+validate-vsphere-lab: ## Validate vSphere lab readiness for the smallest API lab
+	@bash tests/scripts/validate-vsphere-lab-readiness.sh
 
 test: ## Run smoke tests against deployed infrastructure
 	@bash tests/scripts/smoke-test.sh
