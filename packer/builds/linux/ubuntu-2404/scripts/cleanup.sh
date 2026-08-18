@@ -12,9 +12,13 @@ rm -f /var/lib/dbus/machine-id
 ln -s /etc/machine-id /var/lib/dbus/machine-id
 
 echo "==> Clearing cloud-init state..."
-rm -f /etc/cloud/cloud-init.disabled
-systemctl enable cloud-init-local cloud-init cloud-config cloud-final
-cloud-init clean --logs --seed
+if command -v cloud-init >/dev/null 2>&1; then
+  rm -f /etc/cloud/cloud-init.disabled
+  systemctl enable cloud-init-local cloud-init cloud-config cloud-final
+  cloud-init clean --logs --seed
+else
+  rm -rf /etc/cloud /var/lib/cloud
+fi
 
 echo "==> Removing SSH host keys..."
 rm -f /etc/ssh/ssh_host_*
