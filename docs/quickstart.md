@@ -63,7 +63,7 @@ make setup-tags
 make deploy-higher-ed-baseline
 ```
 
-Terraform creates the VM and applies vSphere tags. The deploy target then renders `config/generated/higher-ed-hosts.yml` from Terraform output and runs `ansible/playbooks/higher-ed-linux-baseline.yml`.
+Terraform creates the VM and applies vSphere tags. During the same `terraform apply`, Terraform renders `config/generated/higher-ed-hosts.yml` and runs `ansible/playbooks/higher-ed-linux-baseline.yml`.
 
 ## Step 7: Verify
 

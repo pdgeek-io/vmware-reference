@@ -1,16 +1,6 @@
 output "vm_inventory" {
   description = "VM placement, address, and metadata for downstream Ansible, CMDB, and ITSM workflows."
-  value = {
-    for name, vm in var.vms : name => {
-      ip_address = vm.ip_address
-      fqdn       = try(vm.dns_ipam.fqdn, "${name}.${var.domain}")
-      folder     = vm.folder
-      template   = vm.template
-      tags       = vm.tags
-      chargeback = vm.chargeback
-      validation = try(vm.validation, {})
-    }
-  }
+  value       = local.vm_inventory
 }
 
 output "dns_ipam_placeholders" {

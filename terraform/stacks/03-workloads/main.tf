@@ -21,6 +21,18 @@ provider "vsphere" {
 }
 
 locals {
+  vm_inventory = {
+    for name, vm in var.vms : name => {
+      ip_address = vm.ip_address
+      fqdn       = try(vm.dns_ipam.fqdn, "${name}.${var.domain}")
+      folder     = vm.folder
+      template   = vm.template
+      tags       = vm.tags
+      chargeback = vm.chargeback
+      validation = try(vm.validation, {})
+    }
+  }
+
   vm_tag_specs = flatten([
     for vm_name, vm in var.vms : [
       for tag in vm.tags : {
@@ -87,4 +99,35 @@ module "workload_vms" {
   tags = [
     for tag in each.value.tags : data.vsphere_tag.workload["${tag.category}/${tag.name}"].id
   ]
+}
+
+resource "terraform_data" "ansible_after_apply" {
+  count = var.run_ansible_after_apply ? 1 : 0
+
+  input = local.vm_inventory
+  triggers_replace = [
+    sha256(jsonencode(local.vm_inventory)),
+    var.ansible_handoff_version,
+  ]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+set -euo pipefail
+mkdir -p "$(dirname "${abspath("${path.root}/${var.ansible_inventory_path}")}")"
+cat > "${path.root}/.terraform/higher-ed-vm-inventory.json" <<'JSON'
+${jsonencode(local.vm_inventory)}
+JSON
+python3 "${abspath("${path.root}/${var.ansible_inventory_renderer}")}" \
+  --group "${var.ansible_inventory_group}" \
+  < "${path.root}/.terraform/higher-ed-vm-inventory.json" \
+  > "${abspath("${path.root}/${var.ansible_inventory_path}")}"
+ANSIBLE_CONFIG="${abspath("${path.root}/${var.ansible_config_path}")}" \
+  ansible-playbook \
+  -i "${abspath("${path.root}/${var.ansible_inventory_path}")}" \
+  "${abspath("${path.root}/${var.ansible_playbook_path}")}"
+EOT
+  }
+
+  depends_on = [module.workload_vms]
 }

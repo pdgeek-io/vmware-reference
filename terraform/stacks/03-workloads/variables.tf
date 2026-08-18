@@ -40,6 +40,48 @@ variable "netmask" {
   default = 24
 }
 
+variable "run_ansible_after_apply" {
+  description = "Run the local Ansible post-provision handoff from inside terraform apply."
+  type        = bool
+  default     = false
+}
+
+variable "ansible_handoff_version" {
+  description = "Increment to force the Terraform-driven Ansible handoff to rerun without changing VM metadata."
+  type        = string
+  default     = "1"
+}
+
+variable "ansible_inventory_renderer" {
+  description = "Path to the Terraform-output-to-Ansible-inventory renderer, relative to this Terraform stack."
+  type        = string
+  default     = "../../../scripts/render-terraform-inventory.py"
+}
+
+variable "ansible_inventory_path" {
+  description = "Generated Ansible inventory path, relative to this Terraform stack."
+  type        = string
+  default     = "../../../config/generated/higher-ed-hosts.yml"
+}
+
+variable "ansible_inventory_group" {
+  description = "Generated Ansible inventory group used by the higher-ed baseline playbook."
+  type        = string
+  default     = "higher_ed_linux"
+}
+
+variable "ansible_config_path" {
+  description = "Ansible config path, relative to this Terraform stack."
+  type        = string
+  default     = "../../../ansible/ansible.cfg"
+}
+
+variable "ansible_playbook_path" {
+  description = "Post-provision Ansible playbook path, relative to this Terraform stack."
+  type        = string
+  default     = "../../../ansible/playbooks/higher-ed-linux-baseline.yml"
+}
+
 variable "vms" {
   description = "Map of VM definitions to deploy"
   type = map(object({

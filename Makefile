@@ -77,12 +77,8 @@ deploy-workloads: ## Deploy VMs from templates via Terraform
 
 deploy-higher-ed-baseline: ## Deploy first higher-ed VM with Terraform, then configure with Ansible
 	@echo "==> Deploying higher-ed baseline workload..."
-	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve
-	@mkdir -p $(CONFIG_DIR)/generated
-	terraform -chdir=$(TERRAFORM_DIR)/03-workloads output -json vm_inventory | \
-		python3 scripts/render-terraform-inventory.py --group higher_ed_linux > $(CONFIG_DIR)/generated/higher-ed-hosts.yml
-	ansible-playbook -i $(CONFIG_DIR)/generated/higher-ed-hosts.yml \
-		ansible/playbooks/higher-ed-linux-baseline.yml
+	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve \
+		-var run_ansible_after_apply=true
 
 deploy-three-tier: ## Deploy three-tier web application (nginx + Flask + PostgreSQL)
 	@echo "==> Deploying three-tier application..."

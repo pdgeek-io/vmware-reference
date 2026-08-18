@@ -157,8 +157,8 @@ This is the smallest end-to-end private-cloud automation slice:
 1. `make setup-tags` creates the vSphere tag categories and baseline tag values used for showback, ownership, backup policy, data classification, and lifecycle review.
 2. `terraform/stacks/03-workloads` clones the VM from a template and applies the vSphere tags.
 3. Terraform outputs VM inventory, DNS/IPAM placeholder records, chargeback metadata, and app-deployment hooks.
-4. `scripts/render-terraform-inventory.py` turns Terraform output into `config/generated/higher-ed-hosts.yml`.
-5. `ansible/playbooks/higher-ed-linux-baseline.yml` configures the guest, writes metadata evidence, and validates DNS plus TCP reachability.
+4. With `run_ansible_after_apply=true`, Terraform turns its own output into `config/generated/higher-ed-hosts.yml`.
+5. The same Terraform apply calls `ansible/playbooks/higher-ed-linux-baseline.yml`, which configures the guest, writes metadata evidence, and validates DNS plus TCP reachability.
 
 Operate it with:
 

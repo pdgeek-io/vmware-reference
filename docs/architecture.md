@@ -117,8 +117,8 @@ Operator flow:
 1. `make setup-tags` creates tag categories and baseline values in vCenter.
 2. `make deploy-higher-ed-baseline` runs Terraform against `terraform/stacks/03-workloads`.
 3. Terraform emits `vm_inventory`, `dns_ipam_placeholders`, and `app_deployment_hooks`.
-4. `scripts/render-terraform-inventory.py` converts `vm_inventory` into an Ansible inventory group named `higher_ed_linux`.
-5. Ansible runs `ansible/playbooks/higher-ed-linux-baseline.yml` against that generated inventory.
+4. When `run_ansible_after_apply=true`, Terraform calls `scripts/render-terraform-inventory.py` during apply to convert `vm_inventory` into an Ansible inventory group named `higher_ed_linux`.
+5. Terraform then calls `ansible/playbooks/higher-ed-linux-baseline.yml` through `ansible-playbook` before the apply returns.
 
 Tagging is part of the operational contract, not decoration. The first build carries tags for department, cost center, project, environment, owner, application, app owner, technical owner, service tier, backup policy, data classification, billing model, and lifecycle review. These tags support higher-ed showback, shared-services consumption reporting, backup ownership, support routing, and CMDB reconciliation.
 

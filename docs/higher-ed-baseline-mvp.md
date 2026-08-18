@@ -4,8 +4,8 @@ This is the first common infrastructure build slice for a live vSphere lab. It k
 
 1. Terraform clones a small Ubuntu VM from the existing template and applies standard vSphere tags.
 2. Terraform emits VM inventory, DNS/IPAM placeholder records, chargeback metadata, and app deployment hooks as outputs.
-3. `scripts/render-terraform-inventory.py` converts Terraform inventory output into an Ansible inventory group.
-4. Ansible applies common Linux services, validates VMware Tools and DNS, writes platform metadata, and stages optional app hook scripts.
+3. When `run_ansible_after_apply=true`, Terraform calls `scripts/render-terraform-inventory.py` during apply to create an Ansible inventory group.
+4. The same Terraform apply then calls `ansible-playbook` to apply common Linux services, validate VMware Tools and DNS, write platform metadata, and stage optional app hook scripts.
 5. The self-service catalog exposes a single requestable item: `higher-ed-small-linux`.
 
 ## Catalog Item
@@ -37,7 +37,7 @@ The stack now accepts optional VM fields:
 
 Run `make setup-tags` before applying if the lab does not already have the standard tag categories and baseline tags.
 
-To run Terraform and immediately hand off to Ansible:
+To run Terraform and immediately hand off to Ansible during the same `terraform apply`:
 
 ```bash
 make deploy-higher-ed-baseline
@@ -45,13 +45,15 @@ make deploy-higher-ed-baseline
 
 ## Ansible
 
-The deploy target generates `config/generated/higher-ed-hosts.yml` from Terraform output. To run only the Ansible side after the VM is reachable:
+The deploy target sets `run_ansible_after_apply=true`, so Terraform creates the VM and then runs the local Ansible handoff before the apply finishes. To run only the Ansible side after the VM is reachable:
 
 ```bash
 ansible-playbook -i config/generated/higher-ed-hosts.yml ansible/playbooks/higher-ed-linux-baseline.yml
 ```
 
 The playbook writes `/etc/pdgeek/higher-ed-baseline.yml`, stages hook scripts under `/opt/pdgeek/hooks.d`, and validates DNS plus TCP port 22 by default.
+
+To force the Terraform-driven Ansible handoff to rerun without changing VM metadata, increment `ansible_handoff_version`.
 
 ## Validation
 
