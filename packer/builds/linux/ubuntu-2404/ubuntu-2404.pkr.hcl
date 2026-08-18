@@ -64,10 +64,10 @@ source "vsphere-iso" "ubuntu-2404" {
     "/meta-data" = ""
   }
 
-  boot_wait = "1s"
+  boot_wait = "3s"
   boot_command = [
-    "c<wait>",
-    "linux /casper/vmlinuz autoinstall ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---<enter><wait>",
+    "<esc><wait>c<wait>",
+    "linux /casper/vmlinuz --- autoinstall ds=\"nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\"<enter><wait>",
     "initrd /casper/initrd<enter><wait>",
     "boot<enter>"
   ]
