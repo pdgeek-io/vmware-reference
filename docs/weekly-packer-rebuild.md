@@ -24,6 +24,8 @@ Template builds must run in GitLab, not from an operator workstation. Register a
 
 The Packer job declares all three tags, so it will not run on generic shared runners.
 
+Runner build and registration details live in [gitlab-packer-runner.md](gitlab-packer-runner.md).
+
 ## Runner Requirements
 
 The scheduled runner must have:
