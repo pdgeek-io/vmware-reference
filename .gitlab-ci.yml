@@ -27,7 +27,6 @@ templates:weekly-packer-rebuild:
     - if: '$CI_PIPELINE_SOURCE == "web" && $PACKER_WEEKLY_REBUILD == "true"'
       when: manual
     - if: '$CI_PIPELINE_SOURCE == "api" && $PACKER_WEEKLY_REBUILD == "true"'
-      when: manual
   variables:
     PACKER_TEMPLATE_PATHS: >-
       linux/ubuntu-2404
