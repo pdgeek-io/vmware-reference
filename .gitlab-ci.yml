@@ -59,13 +59,15 @@ templates:weekly-packer-rebuild:
       set -euo pipefail
       for template_path in ${PACKER_TEMPLATE_PATHS}; do
         echo "==> Rebuilding Packer template: ${template_path}"
-        packer init "packer/builds/${template_path}/"
+        pushd "packer/builds/${template_path}/"
+        packer init .
         packer validate \
-          -var-file="packer/config/vsphere.pkrvars.hcl" \
-          -var-file="packer/config/common.pkrvars.hcl" \
-          "packer/builds/${template_path}/"
+          -var-file="../../../config/vsphere.pkrvars.hcl" \
+          -var-file="../../../config/common.pkrvars.hcl" \
+          .
         packer build -force \
-          -var-file="packer/config/vsphere.pkrvars.hcl" \
-          -var-file="packer/config/common.pkrvars.hcl" \
-          "packer/builds/${template_path}/"
+          -var-file="../../../config/vsphere.pkrvars.hcl" \
+          -var-file="../../../config/common.pkrvars.hcl" \
+          .
+        popd
       done
