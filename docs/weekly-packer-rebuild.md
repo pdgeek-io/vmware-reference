@@ -26,6 +26,24 @@ The scheduled runner must have:
 
 Do not commit real credentials or local var files. Store runner-side credentials in the approved secrets path and materialize the Packer var files during runner setup.
 
+## Bootstrap Inputs
+
+Linux templates:
+
+- Ubuntu uses cloud-init autoinstall from `packer/builds/linux/ubuntu-2404/http/user-data`.
+- RHEL/Rocky use kickstart from `packer/builds/linux/rhel-9/http/ks.cfg`.
+- `open-vm-tools`, Python, and base utilities are installed during unattended OS setup.
+- `build_username`, `build_password_hash`, and `ssh_public_key` come from `packer/config/common.pkrvars.hcl`.
+- CIS hardening can disable SSH password auth, so `ssh_public_key` must be populated before hardened templates are built.
+
+Windows templates:
+
+- Packer generates `Autounattend.xml` from template variables and attaches it as floppy content.
+- `build_password` sets the temporary Administrator password used by autologon and Packer WinRM.
+- VMware Tools installs from `vmtools_iso_path` through `install-vmtools.ps1`.
+- WinRM is enabled by `configure-winrm.ps1` so Packer can run post-install PowerShell provisioners.
+- Sysprep generalizes and shuts down the VM before conversion to template.
+
 ## Default Template Set
 
 The scheduled job rebuilds:

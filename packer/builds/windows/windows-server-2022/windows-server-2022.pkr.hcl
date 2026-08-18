@@ -22,7 +22,7 @@ source "vsphere-iso" "windows-2022" {
   datastore  = var.datastore_name
   folder     = var.template_folder
 
-  vm_name              = "tpl-windows-2022"
+  vm_name = "tpl-windows-2022"
   # vSphere uses "windows2019srvNext_64Guest" for Server 2022+ (no distinct type)
   guest_os_type        = "windows2019srvNext_64Guest"
   firmware             = "efi"
@@ -46,8 +46,13 @@ source "vsphere-iso" "windows-2022" {
     var.vmtools_iso_path,
   ]
 
+  floppy_content = {
+    "Autounattend.xml" = templatefile("${path.root}/scripts/Autounattend.xml", {
+      build_password = var.build_password
+    })
+  }
+
   floppy_files = [
-    "${path.root}/scripts/Autounattend.xml",
     "${path.root}/scripts/configure-winrm.ps1",
     "${path.root}/scripts/install-vmtools.ps1",
   ]
