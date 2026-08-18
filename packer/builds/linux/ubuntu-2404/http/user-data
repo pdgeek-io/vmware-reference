@@ -28,11 +28,16 @@ autoinstall:
   late-commands:
     - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
     - chmod 0440 /target/etc/sudoers.d/${username}
+    - curtin in-target -- usermod --password '${password}' ${username}
+    - curtin in-target -- install -d -m 0755 /etc/ssh/sshd_config.d
+    - "printf '%s\n' 'PasswordAuthentication yes' 'KbdInteractiveAuthentication yes' 'PermitRootLogin no' > /target/etc/ssh/sshd_config.d/99-packer-build.conf"
     - curtin in-target -- systemctl enable ssh
     - curtin in-target -- ufw allow OpenSSH
     - curtin in-target -- ufw --force disable
-    - curtin in-target -- apt-get -y purge cloud-init
-    - curtin in-target -- rm -rf /etc/cloud /var/lib/cloud
+    - touch /target/etc/cloud/cloud-init.disabled
+    - curtin in-target -- systemctl disable cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service
+    - curtin in-target -- systemctl mask cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service
+    - curtin in-target -- rm -rf /var/lib/cloud
     # Enable weekly TRIM/UNMAP for thin-provisioned disk reclaim on PowerStore
     - curtin in-target -- systemctl enable fstrim.timer
     - "curtin in-target -- sed -i 's/^.*issue_discards = .*/\\tissue_discards = 1/' /etc/lvm/lvm.conf"
