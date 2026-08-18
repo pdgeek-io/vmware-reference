@@ -33,6 +33,12 @@ $agentPlaceholders = @(
         Notes = "Add vendor-supported agent identity reset or uninstall workflow here."
     },
     @{
+        Name = "Sophos"
+        Services = @("Sophos Anti-Virus", "Sophos AutoUpdate Service", "Sophos Endpoint Defense Service", "Sophos File Scanner Service", "Sophos Health Service", "Sophos MCS Agent", "Sophos MCS Client", "Sophos Network Threat Protection", "Sophos System Protection Service", "Sophos Web Control Service")
+        Paths = @("C:\Program Files\Sophos", "C:\Program Files (x86)\Sophos", "C:\ProgramData\Sophos")
+        Notes = "Add approved Sophos tamper-protection/offboarding and endpoint identity cleanup here before templating."
+    },
+    @{
         Name = "Tanium"
         Services = @("Tanium Client")
         Paths = @("C:\Program Files (x86)\Tanium\Tanium Client")

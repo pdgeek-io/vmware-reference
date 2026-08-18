@@ -43,7 +43,7 @@ Windows templates:
 - VMware Tools installs from `vmtools_iso_path` through `install-vmtools.ps1`.
 - WinRM is enabled by `configure-winrm.ps1` so Packer can run post-install PowerShell provisioners.
 - `packer/builds/windows/common/scripts/cleanup-windows-template.ps1` removes common consumer/provisioned app packages when present, disables nonessential base-template services/features, removes ghost NICs and stale network profiles, clears transient build artifacts, reclaims component store space, and writes cleanup evidence.
-- `packer/builds/windows/common/scripts/cleanup-security-agents.ps1` and `packer/builds/linux/common/scripts/cleanup-security-agents.sh` are placeholders for customer security, EDR, monitoring, backup, and RMM agent cleanup. They disable known services when found, record agent artifacts, and mark vendor-specific identity reset work as `placeholder-required` until the approved vendor procedure is added.
+- `packer/builds/windows/common/scripts/cleanup-security-agents.ps1` and `packer/builds/linux/common/scripts/cleanup-security-agents.sh` are placeholders for customer security, EDR, monitoring, backup, and RMM agent cleanup, including Sophos. They disable known services when found, record agent artifacts, and mark vendor-specific identity reset work as `placeholder-required` until the approved vendor procedure is added.
 - Sysprep generalizes and shuts down the VM before conversion to template.
 
 ## Default Template Set

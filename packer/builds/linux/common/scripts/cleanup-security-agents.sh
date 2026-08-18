@@ -60,6 +60,18 @@ fi
 record_agent "SentinelOne" "${found}" "Add vendor-supported agent identity reset or uninstall workflow here."
 
 found="not-present"
+if disable_service_if_present sophos-spl || \
+  disable_service_if_present sophos-av || \
+  disable_service_if_present sophos-mcs-agent || \
+  disable_service_if_present sophos-sophos-rms || \
+  [ -d /opt/sophos-spl ] || \
+  [ -d /opt/sophos-av ] || \
+  [ -d /var/opt/sophos-spl ]; then
+  found="placeholder-required"
+fi
+record_agent "Sophos" "${found}" "Add approved Sophos tamper-protection/offboarding and endpoint identity cleanup here before templating."
+
+found="not-present"
 if disable_service_if_present taniumclient || [ -d /opt/Tanium ]; then
   found="placeholder-required"
 fi
