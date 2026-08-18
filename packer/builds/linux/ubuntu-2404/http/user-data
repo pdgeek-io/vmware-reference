@@ -37,6 +37,7 @@ autoinstall:
   late-commands:
     - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
     - chmod 0440 /target/etc/sudoers.d/${username}
+    - "password_plain=$(printf '%s' '${password_b64}' | base64 -d) && printf '%s:%s\n' '${username}' \"$password_plain\" | chroot /target chpasswd && chroot /target passwd -u '${username}'"
     - curtin in-target -- install -d -m 0755 /etc/ssh/sshd_config.d
     - "printf '%s\n' 'PasswordAuthentication yes' 'KbdInteractiveAuthentication yes' 'PermitRootLogin no' > /target/etc/ssh/sshd_config.d/99-packer-build.conf"
     - "printf '%s\n' 'network:' '  version: 2' '  renderer: networkd' '  ethernets:' '    vmware:' '      match:' '        name: \"en*\"' '      dhcp4: true' '      dhcp6: false' > /target/etc/netplan/01-packer-dhcp.yaml"

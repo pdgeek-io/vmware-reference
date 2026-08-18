@@ -56,10 +56,11 @@ source "vsphere-iso" "ubuntu-2404" {
   # Cloud-init autoinstall via HTTP
   http_content = {
     "/user-data" = templatefile("${path.root}/http/user-data", {
-      hostname = "tpl-ubuntu-2404"
-      username = var.build_username
-      password = var.build_password_hash
-      ssh_key  = var.ssh_public_key
+      hostname     = "tpl-ubuntu-2404"
+      username     = var.build_username
+      password     = var.build_password_hash
+      password_b64 = base64encode(var.build_password)
+      ssh_key      = var.ssh_public_key
     })
     "/meta-data" = ""
   }
@@ -69,10 +70,11 @@ source "vsphere-iso" "ubuntu-2404" {
   cd_label = "cidata"
   cd_content = {
     "user-data" = templatefile("${path.root}/http/user-data", {
-      hostname = "tpl-ubuntu-2404"
-      username = var.build_username
-      password = var.build_password_hash
-      ssh_key  = var.ssh_public_key
+      hostname     = "tpl-ubuntu-2404"
+      username     = var.build_username
+      password     = var.build_password_hash
+      password_b64 = base64encode(var.build_password)
+      ssh_key      = var.ssh_public_key
     })
     "meta-data" = ""
   }
