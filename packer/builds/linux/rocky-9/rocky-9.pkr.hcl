@@ -92,6 +92,11 @@ build {
     scripts         = ["${path.root}/../rhel-9/scripts/cleanup.sh"]
   }
 
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts         = ["${path.root}/../common/scripts/cleanup-security-agents.sh"]
+  }
+
   # CIS-aligned hardening is the final guest-side step because it can disable
   # password SSH and prevent later Packer provisioners from reconnecting.
   provisioner "ansible" {

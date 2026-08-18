@@ -102,6 +102,13 @@ build {
     ]
   }
 
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = [
+      "${path.root}/../common/scripts/cleanup-security-agents.sh"
+    ]
+  }
+
   # CIS baseline hardening is intentionally the final guest-side step.
   # Some controls, such as SSH password-auth disabling, can prevent later
   # Packer shell provisioners from reconnecting when a build uses passwords.

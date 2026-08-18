@@ -98,6 +98,10 @@ build {
   }
 
   provisioner "powershell" {
+    script = "${path.root}/../common/scripts/cleanup-security-agents.ps1"
+  }
+
+  provisioner "powershell" {
     inline = [
       "& C:\\Windows\\System32\\Sysprep\\sysprep.exe /generalize /oobe /shutdown /quiet",
     ]
