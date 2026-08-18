@@ -14,6 +14,16 @@ Create a GitLab pipeline schedule for this repo:
 
 The schedule runs `.gitlab-ci.yml` job `templates:weekly-packer-rebuild`.
 
+## GitLab Runner Pattern
+
+Template builds must run in GitLab, not from an operator workstation. Register a dedicated runner with these tags:
+
+- `packer`
+- `vsphere`
+- `vmware-automation`
+
+The Packer job declares all three tags, so it will not run on generic shared runners.
+
 ## Runner Requirements
 
 The scheduled runner must have:
@@ -24,7 +34,16 @@ The scheduled runner must have:
 - `packer/config/vsphere.pkrvars.hcl` available on the runner
 - `packer/config/common.pkrvars.hcl` available on the runner
 
-Do not commit real credentials or local var files. Store runner-side credentials in the approved secrets path and materialize the Packer var files during runner setup.
+Do not commit real credentials or local var files. Store runner-side credentials in protected and masked GitLab CI/CD variables or file variables. The CI job materializes ignored local files at runtime.
+
+Supported CI variables:
+
+- `PACKER_VSPHERE_PKRVARS_FILE`: GitLab file variable containing `vsphere.pkrvars.hcl`
+- `PACKER_COMMON_PKRVARS_FILE`: GitLab file variable containing `common.pkrvars.hcl`
+- `PACKER_VSPHERE_PKRVARS_HCL`: protected masked text fallback containing `vsphere.pkrvars.hcl`
+- `PACKER_COMMON_PKRVARS_HCL`: protected masked text fallback containing `common.pkrvars.hcl`
+
+Prefer file variables for multi-line HCL. The job writes them to `packer/config/*.pkrvars.hcl` with mode `0600` and does not print secret values.
 
 ## Bootstrap Inputs
 

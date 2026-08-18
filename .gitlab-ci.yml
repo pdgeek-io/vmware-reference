@@ -13,6 +13,10 @@ validate:higher-ed-baseline:
 
 templates:weekly-packer-rebuild:
   stage: templates
+  tags:
+    - packer
+    - vsphere
+    - vmware-automation
   resource_group: packer-template-builds
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $PACKER_WEEKLY_REBUILD == "true"'
@@ -25,6 +29,29 @@ templates:weekly-packer-rebuild:
       linux/rocky-9
       windows/windows-server-2022
       windows/windows-server-2025
+  before_script:
+    - |
+      set -euo pipefail
+      mkdir -p packer/config
+      if [ -n "${PACKER_VSPHERE_PKRVARS_FILE:-}" ]; then
+        install -m 0600 "${PACKER_VSPHERE_PKRVARS_FILE}" packer/config/vsphere.pkrvars.hcl
+      elif [ -n "${PACKER_VSPHERE_PKRVARS_HCL:-}" ]; then
+        printf '%s\n' "${PACKER_VSPHERE_PKRVARS_HCL}" > packer/config/vsphere.pkrvars.hcl
+        chmod 0600 packer/config/vsphere.pkrvars.hcl
+      else
+        echo "Missing PACKER_VSPHERE_PKRVARS_FILE or PACKER_VSPHERE_PKRVARS_HCL" >&2
+        exit 2
+      fi
+
+      if [ -n "${PACKER_COMMON_PKRVARS_FILE:-}" ]; then
+        install -m 0600 "${PACKER_COMMON_PKRVARS_FILE}" packer/config/common.pkrvars.hcl
+      elif [ -n "${PACKER_COMMON_PKRVARS_HCL:-}" ]; then
+        printf '%s\n' "${PACKER_COMMON_PKRVARS_HCL}" > packer/config/common.pkrvars.hcl
+        chmod 0600 packer/config/common.pkrvars.hcl
+      else
+        echo "Missing PACKER_COMMON_PKRVARS_FILE or PACKER_COMMON_PKRVARS_HCL" >&2
+        exit 2
+      fi
   script:
     - |
       set -euo pipefail
