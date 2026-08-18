@@ -33,6 +33,7 @@ autoinstall:
     - curtin in-target -- ufw allow OpenSSH
     - curtin in-target -- ufw --force disable
     - touch /target/etc/cloud/cloud-init.disabled
+    - curtin in-target -- systemctl disable cloud-init-local cloud-init cloud-config cloud-final
     # Enable weekly TRIM/UNMAP for thin-provisioned disk reclaim on PowerStore
     - curtin in-target -- systemctl enable fstrim.timer
     - "curtin in-target -- sed -i 's/^.*issue_discards = .*/\\tissue_discards = 1/' /etc/lvm/lvm.conf"
