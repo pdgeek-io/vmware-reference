@@ -94,12 +94,11 @@ build {
   }
 
   provisioner "powershell" {
+    script = "${path.root}/../common/scripts/cleanup-windows-template.ps1"
+  }
+
+  provisioner "powershell" {
     inline = [
-      "# Clean up for template",
-      "Remove-Item -Path $env:TEMP\\* -Recurse -Force -ErrorAction SilentlyContinue",
-      "Clear-EventLog -LogName Application, System, Security -ErrorAction SilentlyContinue",
-      "Stop-Service -Name wuauserv -Force",
-      "Remove-Item -Path C:\\Windows\\SoftwareDistribution\\* -Recurse -Force -ErrorAction SilentlyContinue",
       "& C:\\Windows\\System32\\Sysprep\\sysprep.exe /generalize /oobe /shutdown /quiet",
     ]
   }
