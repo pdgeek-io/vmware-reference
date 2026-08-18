@@ -64,13 +64,29 @@ source "vsphere-iso" "ubuntu-2404" {
     "/meta-data" = ""
   }
 
-  boot_wait = "5s"
+  boot_wait = "3s"
   boot_command = [
-    "<esc><esc><esc><esc><wait>",
-    "c<wait>",
-    "linux /casper/vmlinuz autoinstall ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---<enter><wait>",
+    "<esc><esc><esc><esc>e<wait>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "<del><del><del><del><del><del><del><del>",
+    "linux /casper/vmlinuz autoinstall ",
+    "ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---<enter><wait>",
     "initrd /casper/initrd<enter><wait>",
-    "boot<enter><wait>"
+    "<f10><wait>"
   ]
 
   # SSH communicator
