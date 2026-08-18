@@ -64,12 +64,11 @@ source "vsphere-iso" "ubuntu-2404" {
     "/meta-data" = ""
   }
 
-  boot_wait = "5s"
+  boot_wait = "3s"
   boot_command = [
-    "<esc><wait>",
     "e<wait>",
     "<down><down><down><end>",
-    " autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---",
     "<f10>"
   ]
 
