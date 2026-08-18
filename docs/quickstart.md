@@ -48,6 +48,14 @@ make build-template-ubuntu
 
 Packer builds an Ubuntu 24.04 template with VMware Tools and stores it in vCenter. If the lab already has a known-good template, update `terraform/stacks/03-workloads/terraform.tfvars` to reference that template instead.
 
+The Ubuntu template runs a narrow CIS-oriented hardening hook during the Packer build. Validate that hook before building:
+
+```bash
+make validate-ubuntu-2404-cis-template
+```
+
+See [Ubuntu 24.04 CIS Template Hook](ubuntu-2404-cis-template.md) for the controls, operator variables, and Terraform/Ansible handoff.
+
 ## Step 5: Validate the First Build Contract
 
 ```bash

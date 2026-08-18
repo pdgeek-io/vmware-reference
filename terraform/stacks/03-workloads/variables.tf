@@ -119,6 +119,7 @@ variable "vms" {
       grant_id            = optional(string)
       data_classification = optional(string, "internal")
       lifecycle           = optional(string, "annual_review")
+      managed_by          = optional(string, "VMware Automation")
     }))
     dns_ipam = optional(object({
       provider    = optional(string, "placeholder")

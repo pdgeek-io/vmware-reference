@@ -1,4 +1,4 @@
-.PHONY: init build-templates deploy-workloads deploy-higher-ed-baseline deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate validate-vsphere-lab validate-higher-ed-baseline destroy help
+.PHONY: init build-templates deploy-workloads deploy-higher-ed-baseline deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -129,6 +129,9 @@ validate-vsphere-lab: ## Validate vSphere lab readiness for the smallest API lab
 
 validate-higher-ed-baseline: ## Validate first higher-ed common infrastructure slice
 	@bash tests/scripts/validate-higher-ed-baseline.sh
+
+validate-ubuntu-2404-cis-template: ## Validate Ubuntu 24.04 Packer CIS baseline hook
+	@bash tests/scripts/validate-ubuntu-2404-cis-template.sh
 
 test: ## Run smoke tests against deployed infrastructure
 	@bash tests/scripts/smoke-test.sh

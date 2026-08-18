@@ -38,6 +38,8 @@ This repo validates and automates the Day 2 layer:
 - ITSM request intake, approvals, CMDB updates, chargeback/showback, and evidence
 - Ansible configuration, patching, compliance checks, and application deployment
 
+VMware Automation is the expected service control plane for managed customer workflows. This repo provides the implementation artifacts behind those services: Terraform for VM and vSphere state, Ansible for guest configuration and validation, and metadata outputs for evidence, CMDB, and showback.
+
 ## Technical Reference
 
 The automation reference target for VMware VVF/VCF on PowerEdge compute and PowerStore storage.
@@ -97,7 +99,7 @@ For per-VM storage policies, PowerStore supports VMware vVols via its built-in V
 
 3. Packer
    └── Builds OS templates (Ubuntu, RHEL, Windows)
-   └── Stores as vSphere templates
+   └── Applies CIS-aligned template baseline before storing as vSphere templates
 
 4. Terraform (03-workloads) or PowerCLI
    └── Deploys VMs from templates
@@ -120,7 +122,9 @@ Operator flow:
 4. When `run_ansible_after_apply=true`, Terraform calls `scripts/render-terraform-inventory.py` during apply to convert `vm_inventory` into an Ansible inventory group named `higher_ed_linux`.
 5. Terraform then calls `ansible/playbooks/higher-ed-linux-baseline.yml` through `ansible-playbook` before the apply returns.
 
-Tagging is part of the operational contract, not decoration. The first build carries tags for department, cost center, project, environment, owner, application, app owner, technical owner, service tier, backup policy, data classification, billing model, and lifecycle review. These tags support higher-ed showback, shared-services consumption reporting, backup ownership, support routing, and CMDB reconciliation.
+The template baseline is part of the operational contract too. Linux catalog builds must start from Packer templates that run a CIS-aligned hardening hook, applying shared controls and writing template evidence before Terraform deploys the VM.
+
+Tagging is part of the operational contract, not decoration. The first build carries tags for department, cost center, project, environment, owner, application, app owner, technical owner, service tier, backup policy, data classification, billing model, lifecycle review, and `ManagedBy/VMware-Automation`. These tags support higher-ed showback, shared-services consumption reporting, backup ownership, support routing, VMware Automation lifecycle ownership, and CMDB reconciliation.
 
 ## VCF-Specific Considerations
 

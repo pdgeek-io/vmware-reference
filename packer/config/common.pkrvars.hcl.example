@@ -3,3 +3,10 @@ build_username      = "packer"
 build_password      = "CHANGE_ME"
 build_password_hash = "$6$rounds=4096$CHANGE_ME"  # Generate with: mkpasswd -m sha-512
 ssh_public_key      = "ssh-ed25519 AAAAC3... your-key-here"
+
+# Ubuntu 24.04 template hardening. Keep ssh_public_key populated before using
+# the default password-auth disablement.
+enable_cis_baseline        = true
+cis_profile                = "cis-ubuntu-2404-level-1-server"
+cis_disable_password_ssh   = true
+cis_apply_kernel_hardening = true

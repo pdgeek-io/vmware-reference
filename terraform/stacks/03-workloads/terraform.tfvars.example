@@ -1,6 +1,7 @@
 # Example: deploy higher-ed workload VMs.
-# Terraform owns the VM shell, vSphere placement, tags, and metadata outputs.
-# Ansible runs after Terraform and consumes vm_inventory from terraform output.
+# VMware Automation is the expected service control plane. Terraform owns the
+# VM shell, vSphere placement, tags, and metadata outputs behind that request.
+# Ansible runs after Terraform and consumes vm_inventory from Terraform output.
 vsphere_server   = "vcenter.lab.example.com"
 vsphere_user     = "administrator@vsphere.local"
 vsphere_password = "CHANGE_ME"
@@ -33,6 +34,7 @@ vms = {
       { category = "DataClassification", name = "Internal" },
       { category = "BillingModel", name = "Shared-Services" },
       { category = "Lifecycle", name = "Annual-Review" },
+      { category = "ManagedBy", name = "VMware-Automation" },
     ]
 
     chargeback = {
@@ -50,6 +52,7 @@ vms = {
       grant_id            = "placeholder"
       data_classification = "internal"
       lifecycle           = "annual_review"
+      managed_by          = "VMware Automation"
     }
 
     dns_ipam = {

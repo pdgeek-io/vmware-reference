@@ -32,6 +32,7 @@ $categories = @(
     @{ Name = "DataClassification"; Description = "Data sensitivity classification" }
     @{ Name = "BillingModel";       Description = "Consumption model for billing and showback" }
     @{ Name = "Lifecycle";          Description = "Lifecycle review or retirement policy" }
+    @{ Name = "ManagedBy";          Description = "Automation control plane or operational owner managing VM lifecycle" }
 )
 
 foreach ($cat in $categories) {
@@ -79,6 +80,7 @@ $baselineTags = @(
     @{ Category = "DataClassification"; Name = "Internal" }
     @{ Category = "BillingModel";       Name = "Shared-Services" }
     @{ Category = "Lifecycle";          Name = "Annual-Review" }
+    @{ Category = "ManagedBy";          Name = "VMware-Automation" }
 )
 
 foreach ($tag in $baselineTags) {

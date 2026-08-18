@@ -1,0 +1,42 @@
+stages:
+  - validate
+  - templates
+
+validate:higher-ed-baseline:
+  stage: validate
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  script:
+    - make validate-higher-ed-baseline
+
+templates:weekly-packer-rebuild:
+  stage: templates
+  resource_group: packer-template-builds
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $PACKER_WEEKLY_REBUILD == "true"'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $PACKER_WEEKLY_REBUILD == "true"'
+      when: manual
+  variables:
+    PACKER_TEMPLATE_PATHS: >-
+      linux/ubuntu-2404
+      linux/rhel-9
+      linux/rocky-9
+      windows/windows-server-2022
+      windows/windows-server-2025
+  script:
+    - |
+      set -euo pipefail
+      for template_path in ${PACKER_TEMPLATE_PATHS}; do
+        echo "==> Rebuilding Packer template: ${template_path}"
+        packer init "packer/builds/${template_path}/"
+        packer validate \
+          -var-file="packer/config/vsphere.pkrvars.hcl" \
+          -var-file="packer/config/common.pkrvars.hcl" \
+          "packer/builds/${template_path}/"
+        packer build -force \
+          -var-file="packer/config/vsphere.pkrvars.hcl" \
+          -var-file="packer/config/common.pkrvars.hcl" \
+          "packer/builds/${template_path}/"
+      done

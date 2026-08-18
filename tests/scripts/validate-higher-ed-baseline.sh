@@ -6,6 +6,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CATALOG_ITEM="${ROOT_DIR}/self-service/catalog/higher-ed-small-linux.yml"
 PLAYBOOK="${ROOT_DIR}/ansible/playbooks/higher-ed-linux-baseline.yml"
 INVENTORY_RENDERER="${ROOT_DIR}/scripts/render-terraform-inventory.py"
+PACKER_CIS_PLAYBOOK="${ROOT_DIR}/packer/builds/common/ansible-packer.yml"
+PACKER_UBUNTU_TEMPLATE="${ROOT_DIR}/packer/builds/linux/ubuntu-2404/ubuntu-2404.pkr.hcl"
+PACKER_UBUNTU_CIS_SCRIPT="${ROOT_DIR}/packer/builds/linux/ubuntu-2404/scripts/cis-baseline.sh"
 STACK_DIR="${ROOT_DIR}/terraform/stacks/03-workloads"
 
 echo "==> Validating higher-ed baseline catalog item"
@@ -45,6 +48,7 @@ expected_tags = [
   ["DataClassification", "Internal"],
   ["BillingModel", "Shared-Services"],
   ["Lifecycle", "Annual-Review"],
+  ["ManagedBy", "VMware-Automation"],
 ]
 missing_tags = expected_tags - tag_keys
 abort("missing expected tags: #{missing_tags.inspect}") unless missing_tags.empty?
@@ -63,9 +67,14 @@ required_chargeback = %w[
   monthly_budget_usd
   data_classification
   lifecycle
+  managed_by
 ]
 missing_chargeback = required_chargeback - item["chargeback"].keys
 abort("missing chargeback keys: #{missing_chargeback.join(', ')}") unless missing_chargeback.empty?
+
+unless item["managed_by"] == "VMware Automation"
+  abort("catalog item must declare VMware Automation as the service control plane")
+end
 
 unless item.dig("network", "dns_ipam", "provider") == "placeholder"
   abort("DNS/IPAM provider must remain placeholder in the MVP")
@@ -88,6 +97,12 @@ echo "  [PASS] terraform/stacks/03-workloads"
 echo "==> Validating Ansible playbook syntax"
 ANSIBLE_CONFIG="${ROOT_DIR}/ansible/ansible.cfg" ansible-playbook -i localhost, --syntax-check "${PLAYBOOK}" >/dev/null
 echo "  [PASS] higher-ed-linux-baseline.yml"
+
+echo "==> Validating Packer CIS baseline hook"
+ANSIBLE_CONFIG="${ROOT_DIR}/ansible/ansible.cfg" ansible-playbook -i localhost, --syntax-check "${PACKER_CIS_PLAYBOOK}" >/dev/null
+grep -q "scripts/cis-baseline.sh" "${PACKER_UBUNTU_TEMPLATE}"
+grep -q "CIS_PROFILE" "${PACKER_UBUNTU_CIS_SCRIPT}"
+echo "  [PASS] Packer CIS baseline hook"
 
 echo "==> Validating Terraform-to-Ansible inventory handoff"
 python3 "${INVENTORY_RENDERER}" --group higher_ed_linux <<'JSON' >/dev/null

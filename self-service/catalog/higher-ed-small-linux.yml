@@ -6,6 +6,7 @@ name: Higher-Ed Small Linux
 description: Ubuntu 24.04 LTS baseline for research/dev workloads with DNS/IPAM placeholder, chargeback metadata, app hooks, and validation
 template: tpl-ubuntu-2404
 os_family: linux
+managed_by: VMware Automation
 
 compute:
   cpu: 2
@@ -53,6 +54,8 @@ tags:
     name: Shared-Services
   - category: Lifecycle
     name: Annual-Review
+  - category: ManagedBy
+    name: VMware-Automation
 
 chargeback:
   department: Research
@@ -68,6 +71,7 @@ chargeback:
   monthly_budget_usd: 75
   data_classification: internal
   lifecycle: annual_review
+  managed_by: VMware Automation
 
 app_hooks:
   ansible_playbooks:

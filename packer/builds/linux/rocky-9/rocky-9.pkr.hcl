@@ -8,6 +8,10 @@ packer {
       source  = "github.com/hashicorp/vsphere"
       version = ">= 1.3.0"
     }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = ">= 1.1.0"
+    }
   }
 }
 
@@ -86,5 +90,15 @@ build {
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts         = ["${path.root}/../rhel-9/scripts/cleanup.sh"]
+  }
+
+  # CIS-aligned hardening is the final guest-side step because it can disable
+  # password SSH and prevent later Packer provisioners from reconnecting.
+  provisioner "ansible" {
+    playbook_file = "${path.root}/../../common/ansible-packer.yml"
+    user          = var.build_username
+    extra_arguments = [
+      "--extra-vars", "ansible_become=true"
+    ]
   }
 }
