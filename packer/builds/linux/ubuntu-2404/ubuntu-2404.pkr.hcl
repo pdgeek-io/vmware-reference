@@ -64,29 +64,25 @@ source "vsphere-iso" "ubuntu-2404" {
     "/meta-data" = ""
   }
 
-  boot_wait = "3s"
+  # Also attach NoCloud seed data as cidata so the installer does not depend on
+  # early-boot network access to the temporary Packer HTTP server.
+  cd_label = "cidata"
+  cd_content = {
+    "user-data" = templatefile("${path.root}/http/user-data", {
+      hostname = "tpl-ubuntu-2404"
+      username = var.build_username
+      password = var.build_password_hash
+      ssh_key  = var.ssh_public_key
+    })
+    "meta-data" = ""
+  }
+
+  boot_wait = "10s"
   boot_command = [
-    "<esc><esc><esc><esc>e<wait>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "<del><del><del><del><del><del><del><del>",
-    "linux /casper/vmlinuz autoinstall ",
-    "ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---<enter><wait>",
-    "initrd /casper/initrd<enter><wait>",
-    "<f10><wait>"
+    "c<wait3s>",
+    "linux /casper/vmlinuz --- autoinstall ds=nocloud;<enter><wait3s>",
+    "initrd /casper/initrd<enter><wait3s>",
+    "boot<enter><wait>"
   ]
 
   # SSH communicator
