@@ -68,6 +68,7 @@ source "vsphere-iso" "ubuntu-2404" {
   boot_command = [
     "e<wait>",
     "<down><down><down><end>",
+    "<bs><bs><bs><bs>",
     " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---",
     "<f10>"
   ]
