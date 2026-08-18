@@ -69,7 +69,7 @@ source "vsphere-iso" "ubuntu-2404" {
     "e<wait>",
     "<down><down><down><end>",
     "<bs><bs><bs><bs>",
-    " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---",
+    " autoinstall ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---",
     "<f10>"
   ]
 
