@@ -9,6 +9,13 @@ PASS=0
 FAIL=0
 SKIP=0
 
+ENV_VSPHERE_DNS_SERVER="${VSPHERE_DNS_SERVER:-}"
+ENV_VSPHERE_REQUIRED_FQDNS="${VSPHERE_REQUIRED_FQDNS:-}"
+ENV_VSPHERE_NTP_SERVER="${VSPHERE_NTP_SERVER:-}"
+ENV_VSPHERE_NTP_REQUIRED="${VSPHERE_NTP_REQUIRED:-}"
+ENV_VCENTER_URL="${VCENTER_URL:-}"
+ENV_VCENTER_TLS_VERIFY="${VCENTER_TLS_VERIFY:-}"
+
 if [[ -f "$CONFIG_FILE" ]]; then
     # shellcheck source=/dev/null
     source "$CONFIG_FILE"
@@ -17,12 +24,12 @@ elif [[ -f "$EXAMPLE_CONFIG_FILE" ]]; then
     source "$EXAMPLE_CONFIG_FILE"
 fi
 
-VSPHERE_DNS_SERVER="${VSPHERE_DNS_SERVER:-}"
-VSPHERE_REQUIRED_FQDNS="${VSPHERE_REQUIRED_FQDNS:-}"
-VSPHERE_NTP_SERVER="${VSPHERE_NTP_SERVER:-}"
-VSPHERE_NTP_REQUIRED="${VSPHERE_NTP_REQUIRED:-false}"
-VCENTER_URL="${VCENTER_URL:-}"
-VCENTER_TLS_VERIFY="${VCENTER_TLS_VERIFY:-false}"
+VSPHERE_DNS_SERVER="${ENV_VSPHERE_DNS_SERVER:-${VSPHERE_DNS_SERVER:-}}"
+VSPHERE_REQUIRED_FQDNS="${ENV_VSPHERE_REQUIRED_FQDNS:-${VSPHERE_REQUIRED_FQDNS:-}}"
+VSPHERE_NTP_SERVER="${ENV_VSPHERE_NTP_SERVER:-${VSPHERE_NTP_SERVER:-}}"
+VSPHERE_NTP_REQUIRED="${ENV_VSPHERE_NTP_REQUIRED:-${VSPHERE_NTP_REQUIRED:-false}}"
+VCENTER_URL="${ENV_VCENTER_URL:-${VCENTER_URL:-}}"
+VCENTER_TLS_VERIFY="${ENV_VCENTER_TLS_VERIFY:-${VCENTER_TLS_VERIFY:-false}}"
 
 pass() {
     echo "  [PASS] $1"
@@ -83,6 +90,9 @@ check_http() {
     local name="$1"
     local url="$2"
     local curl_args=(--fail --silent --show-error --location --connect-timeout 5 --max-time 10 --output /dev/null)
+    local address
+    local url_host
+    local url_port
 
     if [[ -z "$url" ]]; then
         skip "$name HTTP endpoint not configured"
@@ -91,6 +101,25 @@ check_http() {
 
     if [[ "$VCENTER_TLS_VERIFY" != "true" ]]; then
         curl_args+=(--insecure)
+    fi
+
+    if [[ -n "$VSPHERE_DNS_SERVER" ]] && need_command python3; then
+        read -r url_host url_port < <(python3 - "$url" <<'PY'
+from urllib.parse import urlparse
+import sys
+
+parsed = urlparse(sys.argv[1])
+host = parsed.hostname or ""
+port = parsed.port or (443 if parsed.scheme == "https" else 80)
+print(host, port)
+PY
+)
+        if [[ -n "$url_host" && ! "$url_host" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            address="$(resolve_name "$url_host" | head -n 1 || true)"
+            if [[ -n "$address" ]]; then
+                curl_args+=(--resolve "${url_host}:${url_port}:${address}")
+            fi
+        fi
     fi
 
     if run_with_timeout 12 curl "${curl_args[@]}" "$url"; then

@@ -19,10 +19,19 @@ Connect-VIServer -Server $env:VSPHERE_SERVER -User $env:VSPHERE_USER -Password $
 
 # Create tag categories
 $categories = @(
-    @{ Name = "Department"; Description = "Cost center department (e.g., Engineering, Sales, IT)" }
-    @{ Name = "Project";    Description = "Project or application name for cost allocation" }
-    @{ Name = "Owner";      Description = "VM owner or requestor" }
-    @{ Name = "Environment"; Description = "Environment tier (Development, Staging, Production)" }
+    @{ Name = "Department";         Description = "Customer department or college consuming the service" }
+    @{ Name = "CostCenter";         Description = "Billing or showback cost center" }
+    @{ Name = "Project";            Description = "Project, grant, or shared service name for cost allocation" }
+    @{ Name = "Owner";              Description = "Primary VM owner or requestor group" }
+    @{ Name = "Application";        Description = "Application or platform service supported by the VM" }
+    @{ Name = "AppOwner";           Description = "Business or functional application owner" }
+    @{ Name = "TechnicalOwner";     Description = "Technical team accountable for operations" }
+    @{ Name = "Environment";        Description = "Environment tier such as Development, Test, or Production" }
+    @{ Name = "ServiceTier";        Description = "Support and availability tier for shared services" }
+    @{ Name = "BackupPolicy";       Description = "Backup policy or retention intent" }
+    @{ Name = "DataClassification"; Description = "Data sensitivity classification" }
+    @{ Name = "BillingModel";       Description = "Consumption model for billing and showback" }
+    @{ Name = "Lifecycle";          Description = "Lifecycle review or retirement policy" }
 )
 
 foreach ($cat in $categories) {
@@ -36,7 +45,7 @@ foreach ($cat in $categories) {
 }
 
 # Create common department tags
-$departments = @("Engineering", "Sales", "Marketing", "IT", "Finance", "Operations", "Lab")
+$departments = @("Engineering", "Sales", "Marketing", "IT", "Finance", "Operations", "Lab", "Research")
 $deptCategory = Get-TagCategory -Name "Department"
 foreach ($dept in $departments) {
     $existing = Get-Tag -Category $deptCategory -Name $dept -ErrorAction SilentlyContinue
@@ -54,6 +63,30 @@ foreach ($env in $environments) {
     if (-not $existing) {
         New-Tag -Name $env -Category $envCategory | Out-Null
         Write-Host "  [CREATED] Environment/$env" -ForegroundColor Green
+    }
+}
+
+# Create first higher-ed baseline tags used by the MVP catalog item.
+$baselineTags = @(
+    @{ Category = "CostCenter";         Name = "RC-1000" }
+    @{ Category = "Project";            Name = "Shared-Research-Compute" }
+    @{ Category = "Owner";              Name = "Research-IT" }
+    @{ Category = "Application";        Name = "Shared-Linux-Service" }
+    @{ Category = "AppOwner";           Name = "Research-IT" }
+    @{ Category = "TechnicalOwner";     Name = "Platform-Engineering" }
+    @{ Category = "ServiceTier";        Name = "Standard" }
+    @{ Category = "BackupPolicy";       Name = "Daily-30-Day" }
+    @{ Category = "DataClassification"; Name = "Internal" }
+    @{ Category = "BillingModel";       Name = "Shared-Services" }
+    @{ Category = "Lifecycle";          Name = "Annual-Review" }
+)
+
+foreach ($tag in $baselineTags) {
+    $category = Get-TagCategory -Name $tag.Category
+    $existing = Get-Tag -Category $category -Name $tag.Name -ErrorAction SilentlyContinue
+    if (-not $existing) {
+        New-Tag -Name $tag.Name -Category $category | Out-Null
+        Write-Host "  [CREATED] $($tag.Category)/$($tag.Name)" -ForegroundColor Green
     }
 }
 

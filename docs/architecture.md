@@ -108,6 +108,20 @@ For per-VM storage policies, PowerStore supports VMware vVols via its built-in V
    └── App installation (nginx, PostgreSQL, Docker)
 ```
 
+## First Build Contract
+
+The first concrete build is `higher-ed-small-linux`. It is intentionally narrow so the repo has one clean executable pattern before adding more catalog items.
+
+Operator flow:
+
+1. `make setup-tags` creates tag categories and baseline values in vCenter.
+2. `make deploy-higher-ed-baseline` runs Terraform against `terraform/stacks/03-workloads`.
+3. Terraform emits `vm_inventory`, `dns_ipam_placeholders`, and `app_deployment_hooks`.
+4. `scripts/render-terraform-inventory.py` converts `vm_inventory` into an Ansible inventory group named `higher_ed_linux`.
+5. Ansible runs `ansible/playbooks/higher-ed-linux-baseline.yml` against that generated inventory.
+
+Tagging is part of the operational contract, not decoration. The first build carries tags for department, cost center, project, environment, owner, application, app owner, technical owner, service tier, backup policy, data classification, billing model, and lifecycle review. These tags support higher-ed showback, shared-services consumption reporting, backup ownership, support routing, and CMDB reconciliation.
+
 ## VCF-Specific Considerations
 
 When running VMware Cloud Foundation instead of standalone vSphere:

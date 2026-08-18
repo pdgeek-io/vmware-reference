@@ -56,6 +56,8 @@ ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhoo
 
 For lab and PoC validation, the [vSphere lab validation path](docs/vsphere-lab-validation.md) checks the minimal ESXi + vCenter readiness surface while the repo proves service-catalog workflows such as VM provisioning, database deployment, application deployment, evidence capture, and UX feedback.
 
+The first materialized build is [Higher-Ed Small Linux](docs/higher-ed-baseline-mvp.md). It provisions a small Linux service VM, applies showback/ownership/backup/data-classification tags, emits DNS/IPAM and app-hook handoff data, renders a Terraform-generated Ansible inventory, and runs the higher-ed Linux baseline playbook.
+
 ## Under the Hood
 
 Validated Day 2 private cloud automation for VMware VVF/VCF on an already-deployed PowerEdge + PowerStore + PowerScale architecture. Self-service VMs, research storage, ITSM integration, DNS/IPAM, multi-tenancy, CMDB, and chargeback.
@@ -147,6 +149,26 @@ make build-templates   # Ubuntu 24.04, RHEL 9, Windows 2022, Windows 2025
 make demo     # Interactive PowerCLI menu
 make portal   # ITSM-ready REST API (http://localhost:8080/api/docs)
 ```
+
+### First Build: Higher-Ed Small Linux
+
+This is the smallest end-to-end private-cloud automation slice:
+
+1. `make setup-tags` creates the vSphere tag categories and baseline tag values used for showback, ownership, backup policy, data classification, and lifecycle review.
+2. `terraform/stacks/03-workloads` clones the VM from a template and applies the vSphere tags.
+3. Terraform outputs VM inventory, DNS/IPAM placeholder records, chargeback metadata, and app-deployment hooks.
+4. `scripts/render-terraform-inventory.py` turns Terraform output into `config/generated/higher-ed-hosts.yml`.
+5. `ansible/playbooks/higher-ed-linux-baseline.yml` configures the guest, writes metadata evidence, and validates DNS plus TCP reachability.
+
+Operate it with:
+
+```bash
+make validate-higher-ed-baseline
+make setup-tags
+make deploy-higher-ed-baseline
+```
+
+Read [docs/higher-ed-baseline-mvp.md](docs/higher-ed-baseline-mvp.md) before changing the first build contract.
 
 ## Operations Menu
 

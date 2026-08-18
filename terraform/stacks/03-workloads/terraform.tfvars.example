@@ -1,4 +1,6 @@
-# Example: deploy two workload VMs
+# Example: deploy higher-ed workload VMs.
+# Terraform owns the VM shell, vSphere placement, tags, and metadata outputs.
+# Ansible runs after Terraform and consumes vm_inventory from terraform output.
 vsphere_server   = "vcenter.lab.example.com"
 vsphere_user     = "administrator@vsphere.local"
 vsphere_password = "CHANGE_ME"
@@ -7,15 +9,70 @@ gateway     = "10.0.200.1"
 dns_servers = ["10.0.0.10"]
 
 vms = {
-  "web-01" = {
+  "hed-linux-01" = {
     template      = "tpl-ubuntu-2404"
     resource_pool = "Development"
-    folder        = "Reference-VMs/Web"
+    folder        = "Reference-VMs/App"
     cpu           = 2
     memory_mb     = 4096
     os_disk_gb    = 40
     ip_address    = "10.0.200.20"
     data_disks    = []
+
+    tags = [
+      { category = "Department", name = "Research" },
+      { category = "CostCenter", name = "RC-1000" },
+      { category = "Project", name = "Shared-Research-Compute" },
+      { category = "Environment", name = "Development" },
+      { category = "Owner", name = "Research-IT" },
+      { category = "Application", name = "Shared-Linux-Service" },
+      { category = "AppOwner", name = "Research-IT" },
+      { category = "TechnicalOwner", name = "Platform-Engineering" },
+      { category = "ServiceTier", name = "Standard" },
+      { category = "BackupPolicy", name = "Daily-30-Day" },
+      { category = "DataClassification", name = "Internal" },
+      { category = "BillingModel", name = "Shared-Services" },
+      { category = "Lifecycle", name = "Annual-Review" },
+    ]
+
+    chargeback = {
+      department          = "Research"
+      cost_center         = "RC-1000"
+      project             = "Shared-Research-Compute"
+      environment         = "Development"
+      billing_model       = "shared_services"
+      service_tier        = "standard"
+      backup_policy       = "daily_30_day"
+      application         = "Shared-Linux-Service"
+      app_owner           = "research-it@example.edu"
+      technical_owner     = "platform-engineering@example.edu"
+      monthly_budget_usd  = 75
+      grant_id            = "placeholder"
+      data_classification = "internal"
+      lifecycle           = "annual_review"
+    }
+
+    dns_ipam = {
+      provider = "placeholder"
+      fqdn     = "hed-linux-01.lab.example.com"
+      ttl      = 3600
+      ptr      = true
+    }
+
+    app_hooks = {
+      ansible_playbooks = [
+        "ansible/playbooks/higher-ed-linux-baseline.yml",
+        "ansible/playbooks/app-deploy-nginx.yml",
+      ]
+      post_provision = [
+        "ansible-playbook -i config/inventory/hosts.yml ansible/playbooks/higher-ed-linux-baseline.yml --limit hed-linux-01",
+      ]
+    }
+
+    validation = {
+      tcp_ports = [22]
+      http_urls = []
+    }
   }
   "db-01" = {
     template      = "tpl-rhel-9"

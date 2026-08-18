@@ -20,6 +20,39 @@ provider "vsphere" {
   allow_unverified_ssl = true
 }
 
+locals {
+  vm_tag_specs = flatten([
+    for vm_name, vm in var.vms : [
+      for tag in vm.tags : {
+        key      = "${tag.category}/${tag.name}"
+        category = tag.category
+        name     = tag.name
+      }
+    ]
+  ])
+
+  vm_tag_specs_by_key = {
+    for tag in local.vm_tag_specs : tag.key => tag...
+  }
+
+  vm_tags_by_key = {
+    for key, tags in local.vm_tag_specs_by_key : key => tags[0]
+  }
+}
+
+data "vsphere_tag_category" "workload" {
+  for_each = toset([for tag in local.vm_tags_by_key : tag.category])
+
+  name = each.key
+}
+
+data "vsphere_tag" "workload" {
+  for_each = local.vm_tags_by_key
+
+  name        = each.value.name
+  category_id = data.vsphere_tag_category.workload[each.value.category].id
+}
+
 # --- Deploy VMs from catalog definitions ---
 module "workload_vms" {
   source   = "../../modules/vsphere-vm"
@@ -46,7 +79,12 @@ module "workload_vms" {
   disks                  = each.value.data_disks
 
   ip_address  = each.value.ip_address
+  netmask     = coalesce(each.value.netmask, var.netmask)
   gateway     = var.gateway
   dns_servers = var.dns_servers
   domain      = var.domain
+  userdata    = each.value.userdata
+  tags = [
+    for tag in each.value.tags : data.vsphere_tag.workload["${tag.category}/${tag.name}"].id
+  ]
 }

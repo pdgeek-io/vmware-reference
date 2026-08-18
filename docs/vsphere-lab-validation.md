@@ -31,7 +31,7 @@ The validator checks:
 - A records for each FQDN in `VSPHERE_REQUIRED_FQDNS`.
 - NTP reachability for `VSPHERE_NTP_SERVER` when configured. Set `VSPHERE_NTP_REQUIRED=true` only when the runner is on a network path that must reach lab NTP.
 - The local workstation's detectable NTP sync source when `chronyc`, `ntpq`, or `timedatectl` is available.
-- vCenter HTTPS/API reachability when `VCENTER_URL` is configured. `VCENTER_TLS_VERIFY=false` allows the normal lab self-signed certificate phase.
+- vCenter HTTPS/API reachability when `VCENTER_URL` is configured. If `VSPHERE_DNS_SERVER` is set, the validator resolves the vCenter URL hostname through lab DNS for the curl check. `VCENTER_TLS_VERIFY=false` allows the normal lab self-signed certificate phase.
 
 VCF, SDDC Manager, VIS, and NSX checks are intentionally out of this phase. This repo stays focused on Day-2 automation validation against the smallest legitimate vSphere surface first.
 

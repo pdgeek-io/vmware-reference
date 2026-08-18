@@ -1,4 +1,4 @@
-.PHONY: init build-templates deploy-workloads deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate validate-vsphere-lab destroy help
+.PHONY: init build-templates deploy-workloads deploy-higher-ed-baseline deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate validate-vsphere-lab validate-higher-ed-baseline destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -75,6 +75,15 @@ deploy-workloads: ## Deploy VMs from templates via Terraform
 	@echo "==> Deploying workload VMs..."
 	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve
 
+deploy-higher-ed-baseline: ## Deploy first higher-ed VM with Terraform, then configure with Ansible
+	@echo "==> Deploying higher-ed baseline workload..."
+	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve
+	@mkdir -p $(CONFIG_DIR)/generated
+	terraform -chdir=$(TERRAFORM_DIR)/03-workloads output -json vm_inventory | \
+		python3 scripts/render-terraform-inventory.py --group higher_ed_linux > $(CONFIG_DIR)/generated/higher-ed-hosts.yml
+	ansible-playbook -i $(CONFIG_DIR)/generated/higher-ed-hosts.yml \
+		ansible/playbooks/higher-ed-linux-baseline.yml
+
 deploy-three-tier: ## Deploy three-tier web application (nginx + Flask + PostgreSQL)
 	@echo "==> Deploying three-tier application..."
 	terraform -chdir=reference-vms/three-tier-web-app apply -auto-approve
@@ -121,6 +130,9 @@ validate: ## Validate all Terraform, Packer, and Ansible configs
 
 validate-vsphere-lab: ## Validate vSphere lab readiness for the smallest API lab
 	@bash tests/scripts/validate-vsphere-lab-readiness.sh
+
+validate-higher-ed-baseline: ## Validate first higher-ed common infrastructure slice
+	@bash tests/scripts/validate-higher-ed-baseline.sh
 
 test: ## Run smoke tests against deployed infrastructure
 	@bash tests/scripts/smoke-test.sh
