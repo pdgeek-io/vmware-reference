@@ -64,13 +64,13 @@ source "vsphere-iso" "ubuntu-2404" {
     "/meta-data" = ""
   }
 
-  boot_wait = "3s"
+  boot_wait         = "5s"
+  boot_key_interval = "100ms"
   boot_command = [
-    "e<wait>",
-    "<down><down><down><end>",
-    "<bs><bs><bs><bs>",
-    " autoinstall ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---",
-    "<f10>"
+    "c<wait>",
+    "linux /casper/vmlinuz autoinstall ds=\"nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" ---<enter><wait>",
+    "initrd /casper/initrd<enter><wait>",
+    "boot<enter>"
   ]
 
   # SSH communicator
