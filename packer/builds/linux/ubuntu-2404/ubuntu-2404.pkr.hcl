@@ -90,7 +90,9 @@ build {
 
   # Wait for cloud-init to complete
   provisioner "shell" {
-    inline = ["cloud-init status --wait"]
+    inline = [
+      "if [ -f /etc/cloud/cloud-init.disabled ]; then echo 'cloud-init disabled for Packer first boot'; else cloud-init status --wait; fi"
+    ]
   }
 
   # Cleanup

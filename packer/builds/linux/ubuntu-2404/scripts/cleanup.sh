@@ -12,6 +12,7 @@ rm -f /var/lib/dbus/machine-id
 ln -s /etc/machine-id /var/lib/dbus/machine-id
 
 echo "==> Clearing cloud-init state..."
+rm -f /etc/cloud/cloud-init.disabled
 cloud-init clean --logs --seed
 
 echo "==> Removing SSH host keys..."
