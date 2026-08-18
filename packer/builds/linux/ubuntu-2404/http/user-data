@@ -8,7 +8,16 @@ autoinstall:
   identity:
     hostname: ${hostname}
     username: ${username}
-    password: ${password}
+    password: '${password}'
+  network:
+    version: 2
+    renderer: networkd
+    ethernets:
+      vmware:
+        match:
+          name: "en*"
+        dhcp4: true
+        dhcp6: false
   ssh:
     install-server: true
     allow-pw: true
@@ -30,7 +39,8 @@ autoinstall:
     - chmod 0440 /target/etc/sudoers.d/${username}
     - curtin in-target -- install -d -m 0755 /etc/ssh/sshd_config.d
     - "printf '%s\n' 'PasswordAuthentication yes' 'KbdInteractiveAuthentication yes' 'PermitRootLogin no' > /target/etc/ssh/sshd_config.d/99-packer-build.conf"
-    - curtin in-target -- systemctl enable ssh
+    - "printf '%s\n' 'network:' '  version: 2' '  renderer: networkd' '  ethernets:' '    vmware:' '      match:' '        name: \"en*\"' '      dhcp4: true' '      dhcp6: false' > /target/etc/netplan/01-packer-dhcp.yaml"
+    - curtin in-target -- systemctl enable systemd-networkd systemd-resolved open-vm-tools ssh
     - curtin in-target -- ufw allow OpenSSH
     - curtin in-target -- ufw --force disable
     - touch /target/etc/cloud/cloud-init.disabled
