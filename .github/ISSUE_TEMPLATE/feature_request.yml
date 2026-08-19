@@ -1,0 +1,27 @@
+name: Capability Request
+description: Propose a new validated capability for the VMware baseline.
+title: "[Capability]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Customer Outcome
+      description: What customer problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed Scope
+      description: What code, documentation, validation, and operations paths are required?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: What must be true before this is customer-facing?
+    validations:
+      required: true
+

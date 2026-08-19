@@ -135,3 +135,8 @@ Before adding a new customer-facing capability, include:
 - operator documentation
 - a clean rollback or destroy path where applicable
 
+## License And Contributions
+
+This project is licensed under the Apache License 2.0. See `LICENSE` and `NOTICE`.
+
+Contribution, documentation, and security expectations are defined in `CONTRIBUTING.md` and `SECURITY.md`. Planned work, defects, and future capabilities should be tracked in GitHub Issues before they become customer-facing code.
