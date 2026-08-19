@@ -33,3 +33,6 @@ jobs:
 
       - name: Validate Terraform, Packer, and Ansible
         run: bash tests/scripts/validate-all.sh
+
+      - name: Validate Windows Server 2025 template scaffold
+        run: make validate-windows-server-2025-template
