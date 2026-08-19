@@ -1,0 +1,27 @@
+name: Security Hardening
+description: Track hardening work for the supported VMware baseline.
+title: "[Security]: "
+labels: ["security"]
+body:
+  - type: textarea
+    id: control
+    attributes:
+      label: Control Or Risk
+      description: Which control, benchmark item, or risk is being addressed?
+    validations:
+      required: true
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Notes
+      description: Expected Packer, Terraform, Ansible, or validation changes.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: How will this be tested?
+    validations:
+      required: true
+

@@ -1,0 +1,27 @@
+name: Defect
+description: Report a defect in the supported VMware baseline.
+title: "[Defect]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What failed or behaved incorrectly?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: vCenter, Terraform, Packer, Ansible, and OS versions.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation Output
+      description: Relevant command output with secrets removed.
+    validations:
+      required: false
+
