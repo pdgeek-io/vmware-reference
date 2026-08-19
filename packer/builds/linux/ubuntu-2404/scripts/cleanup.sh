@@ -14,6 +14,7 @@ ln -s /etc/machine-id /var/lib/dbus/machine-id
 echo "==> Clearing cloud-init state..."
 if command -v cloud-init >/dev/null 2>&1; then
   rm -f /etc/cloud/cloud-init.disabled
+  systemctl unmask cloud-init-local cloud-init cloud-config cloud-final
   systemctl enable cloud-init-local cloud-init cloud-config cloud-final
   cloud-init clean --logs --seed
 else
