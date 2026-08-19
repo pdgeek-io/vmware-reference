@@ -52,17 +52,43 @@ locals {
   }
 }
 
+resource "vsphere_tag_category" "workload" {
+  for_each = var.manage_vsphere_tags ? toset([for tag in local.vm_tags_by_key : tag.category]) : toset([])
+
+  name        = each.key
+  cardinality = "SINGLE"
+
+  associable_types = [
+    "VirtualMachine",
+  ]
+}
+
+resource "vsphere_tag" "workload" {
+  for_each = var.manage_vsphere_tags ? local.vm_tags_by_key : {}
+
+  name        = each.value.name
+  category_id = vsphere_tag_category.workload[each.value.category].id
+}
+
 data "vsphere_tag_category" "workload" {
-  for_each = toset([for tag in local.vm_tags_by_key : tag.category])
+  for_each = var.manage_vsphere_tags ? toset([]) : toset([for tag in local.vm_tags_by_key : tag.category])
 
   name = each.key
 }
 
 data "vsphere_tag" "workload" {
-  for_each = local.vm_tags_by_key
+  for_each = var.manage_vsphere_tags ? {} : local.vm_tags_by_key
 
   name        = each.value.name
   category_id = data.vsphere_tag_category.workload[each.value.category].id
+}
+
+locals {
+  vm_tag_ids_by_key = var.manage_vsphere_tags ? {
+    for key, tag in vsphere_tag.workload : key => tag.id
+    } : {
+    for key, tag in data.vsphere_tag.workload : key => tag.id
+  }
 }
 
 # --- Deploy VMs from catalog definitions ---
@@ -97,7 +123,7 @@ module "workload_vms" {
   domain      = var.domain
   userdata    = each.value.userdata
   tags = [
-    for tag in each.value.tags : data.vsphere_tag.workload["${tag.category}/${tag.name}"].id
+    for tag in each.value.tags : local.vm_tag_ids_by_key["${tag.category}/${tag.name}"]
   ]
 }
 

@@ -46,6 +46,12 @@ variable "run_ansible_after_apply" {
   default     = false
 }
 
+variable "manage_vsphere_tags" {
+  description = "Create missing workload tag categories/tags. Disable when a site has pre-created governed tags."
+  type        = bool
+  default     = true
+}
+
 variable "ansible_handoff_version" {
   description = "Increment to force the Terraform-driven Ansible handoff to rerun without changing VM metadata."
   type        = string
