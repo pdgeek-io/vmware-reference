@@ -41,6 +41,10 @@ echo ""
 echo "── Packer ──"
 for dir in packer/builds/*/*/; do
     name=$(basename "$dir")
+    if ! compgen -G "${dir}"'*.pkr.hcl' >/dev/null; then
+        continue
+    fi
+
     if packer validate -syntax-only "$dir" 2>/dev/null; then
         echo "  [PASS] $name"
         PASS=$((PASS + 1))

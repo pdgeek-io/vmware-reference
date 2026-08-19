@@ -14,7 +14,7 @@ This platform delivers outcomes, not infrastructure:
 - **"Your grant requirements are met"** — not "we're NIST 800-171 compliant"
 - **"Your spend is tracked"** — not "we run chargeback reports"
 
-The underlying technology is an implementation detail. Researchers interact with a self-service catalog and get results. See the [Adoption Playbook](adoption-playbook.md) for how to position and sell this at your institution.
+The underlying technology is an implementation detail. Researchers interact with a self-service catalog and get results.
 
 ---
 
@@ -128,9 +128,4 @@ Tagging is part of the operational contract, not decoration. The first build car
 
 ## VCF-Specific Considerations
 
-When running VMware Cloud Foundation instead of standalone vSphere:
-- Treat SDDC Manager and workload domain bring-up as Day 0/1 prerequisites unless explicitly working in a lab branch
-- Use the `terraform/stacks/04-vcf-domain/` stack only where the customer architecture allows automation at that layer
-- NSX is expected for VCF designs, so networking may use NSX segments instead of DVS port groups
-- SDDC Manager handles lifecycle management
-- vSAN may be used instead of/alongside PowerStore for HCI storage
+When running VMware Cloud Foundation instead of standalone vSphere, treat SDDC Manager, workload domains, NSX, and lifecycle management as Day 0/1 platform prerequisites unless a future branch explicitly adds tested automation for that layer. This repo currently validates and automates the Day 2 service surface after the VCF/VVF baseline exists.

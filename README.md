@@ -28,12 +28,6 @@ No more 100+ unmanaged servers in closets. No more zombie hardware from grants t
 - Self-funding model — grants pay for usage, the pool grows
 - Reduced risk from unmanaged, unpatched, orphaned infrastructure
 
-### How to Sell This at Your University
-
-See the **[Adoption Playbook](docs/adoption-playbook.md)** — how to get executive buy-in, overcome department politics, handle the "I'll just use AWS" objection, and build a self-sustaining funding model.
-
----
-
 ## Product Positioning
 
 Open-source Day 2 IaC for a validated private cloud built around:
