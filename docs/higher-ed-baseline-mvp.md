@@ -2,12 +2,12 @@
 
 This is the first common infrastructure build slice for a live vSphere lab. It keeps the workflow narrow:
 
-1. Terraform clones a small Ubuntu VM from the existing template and applies standard vSphere tags.
-2. Packer owns the hardened base image. Linux templates run a CIS-aligned hardening hook during image build before Terraform can consume the template.
-3. Terraform emits VM inventory, DNS/IPAM placeholder records, chargeback metadata, and app deployment hooks as outputs.
+1. Packer builds `tpl-ubuntu-2404` and runs the Ubuntu CIS-oriented hardening hook.
+2. Terraform clones a small Ubuntu VM from that template and applies standard vSphere tags.
+3. Terraform emits VM inventory, DNS/IPAM placeholder records, showback metadata, and Ansible handoff hooks as outputs.
 4. When `run_ansible_after_apply=true`, Terraform calls `scripts/render-terraform-inventory.py` during apply to create an Ansible inventory group.
-5. The same Terraform apply then calls `ansible-playbook` to apply common Linux services, validate VMware Tools and DNS, write platform metadata, and stage optional app hook scripts.
-6. The self-service catalog exposes a single requestable item: `higher-ed-small-linux`.
+5. The same Terraform apply calls `ansible-playbook` to apply common Linux services, validate VMware Tools and DNS, write platform metadata, and stage optional local hook scripts.
+6. The catalog contract exposes a single item: `higher-ed-small-linux`.
 
 ## Catalog Item
 
@@ -16,20 +16,20 @@ This is the first common infrastructure build slice for a live vSphere lab. It k
 - 2 vCPU, 4 GB RAM, 40 GB OS disk
 - Showback and operations tags for department, cost center, project, environment, owner, application, app owner, technical owner, service tier, backup policy, data classification, billing model, lifecycle review, and `ManagedBy/VMware-Automation`
 - DNS/IPAM integration is deliberately a placeholder with no provider credentials
-- App hooks point at `ansible/playbooks/higher-ed-linux-baseline.yml`
+- The only validated Ansible hook is `ansible/playbooks/higher-ed-linux-baseline.yml`
 
 ## Terraform
 
-Use the existing workload stack:
+Use the workload stack:
 
 ```bash
 terraform -chdir=terraform/stacks/03-workloads plan
 ```
 
-The stack now accepts optional VM fields:
+The stack accepts these baseline VM metadata fields:
 
 - `tags`
-- `chargeback`
+- `chargeback` metadata for showback fields
 - `dns_ipam`
 - `app_hooks`
 - `validation`
@@ -40,9 +40,7 @@ Run `make setup-tags` before applying if the lab does not already have the stand
 
 ## Packer CIS Baseline
 
-VM builds should start from a hardened template. The Ubuntu 24.04 build runs `packer/builds/linux/ubuntu-2404/scripts/cis-baseline.sh` as the final guest-side Packer step and writes `/etc/pdgeek/template-hardening/ubuntu-2404-cis.yml` as evidence. The RHEL/Rocky builds use `packer/builds/common/ansible-packer.yml` for the same Packer-stage baseline contract. Catalog items should reference templates that have passed the Packer baseline.
-
-Templates are expected to be rebuilt weekly. The GitLab schedule described in `docs/weekly-packer-rebuild.md` should run Friday at midnight so updated templates are ready for Monday work.
+VM builds should start from a hardened template. The Ubuntu 24.04 build runs `packer/builds/linux/ubuntu-2404/scripts/cis-baseline.sh` as the final guest-side Packer step and writes `/etc/pdgeek/template-hardening/ubuntu-2404-cis.yml` as evidence.
 
 To run Terraform and immediately hand off to Ansible during the same `terraform apply`:
 
@@ -62,9 +60,9 @@ The playbook writes `/etc/pdgeek/higher-ed-baseline.yml`, stages hook scripts un
 
 To force the Terraform-driven Ansible handoff to rerun without changing VM metadata, increment `ansible_handoff_version`.
 
-## VMware Automation Control Plane
+## VMware Automation Boundary
 
-The catalog item declares `managed_by: VMware Automation`. For the lab, `make deploy-higher-ed-baseline` drives Terraform directly so the implementation can be tested without waiting on the service control plane. The production expectation is that VMware Automation owns request intake, approvals, tenant context, and day-2 lifecycle actions, then invokes this Terraform/Ansible workflow behind the service item.
+The catalog item declares `managed_by: VMware Automation`, but this repository does not yet contain VMware Automation service definitions, ITSM adapters, approvals, or portal code. For the lab, `make deploy-higher-ed-baseline` drives Terraform directly so the implementation can be tested before adding a service control plane.
 
 ## Validation
 

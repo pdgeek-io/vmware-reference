@@ -1,6 +1,6 @@
 # =============================================================================
 # Packer — Ubuntu 24.04 LTS VM Template for vSphere
-# Builds a hardened, VMware-Tools-enabled template on PowerEdge + PowerStore
+# Builds a hardened, VMware-Tools-enabled template for the higher-ed baseline
 # =============================================================================
 
 packer {

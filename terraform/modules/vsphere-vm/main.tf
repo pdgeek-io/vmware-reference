@@ -100,8 +100,7 @@ resource "vsphere_virtual_machine" "vm" {
     }
   }
 
-  # Enable SCSI UNMAP so guest TRIM/fstrim passes through to the datastore,
-  # allowing thin-provisioned disks to reclaim deleted blocks on PowerStore.
+  # Enable SCSI UNMAP so guest TRIM/fstrim passes through to the datastore.
   extra_config = merge(
     {
       "disk.scsiUnmapAllowed" = "TRUE"

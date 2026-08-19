@@ -1,10 +1,10 @@
 output "vm_inventory" {
-  description = "VM placement, address, and metadata for downstream Ansible, CMDB, and ITSM workflows."
+  description = "VM placement, address, and metadata for the Terraform-to-Ansible handoff."
   value       = local.vm_inventory
 }
 
 output "dns_ipam_placeholders" {
-  description = "DNS/IPAM work items. Replace the placeholder provider with Infoblox/BlueCat/etc. when credentials and provider choice are available."
+  description = "DNS/IPAM work items for external handling. The baseline keeps provider integration as a placeholder."
   value = {
     for name, vm in var.vms : name => merge(
       {
