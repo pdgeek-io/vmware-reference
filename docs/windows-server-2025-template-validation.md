@@ -18,10 +18,20 @@ Set the local file URL in `packer/config/windows-server-2025.pkrvars.hcl`:
 
 ```hcl
 windows_iso_url = "file:///Users/levioister/Downloads/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
+windows_iso_checksum = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4"
 ```
 
-Set `windows_iso_checksum` to the SHA-256 digest of the local ISO before a real
-build.
+The local ISO was checked on 2026-08-19. Its SHA-256 checksum is
+`cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4`.
+
+The ISO contains these install images:
+
+| Index | Image Name | Display Name |
+|-------|------------|--------------|
+| 1 | `Windows Server 2025 SERVERSTANDARDCORE` | Windows Server 2025 Standard |
+| 2 | `Windows Server 2025 SERVERSTANDARD` | Windows Server 2025 Standard (Desktop Experience) |
+| 3 | `Windows Server 2025 SERVERDATACENTERCORE` | Windows Server 2025 Datacenter |
+| 4 | `Windows Server 2025 SERVERDATACENTER` | Windows Server 2025 Datacenter (Desktop Experience) |
 
 ## Syntax Validation
 
@@ -52,11 +62,8 @@ then rotate credentials during post-clone configuration.
 
 ## Promotion Blockers
 
-- Confirm the exact `windows_image_name` exposed by the provided ISO.
 - Confirm vSphere presents the Windows Server 2025 guest OS type. If not, test
   the documented Windows Server 2022 fallback before promoting.
-- Replace `windows_iso_checksum = "none"` or placeholder values with a verified
-  SHA-256 checksum in local build configuration.
 - Restrict WinRM HTTPS firewall source addresses to the Packer runner or build
   subnet.
 - Build the template in vSphere, clone from it, and validate VMware Tools,

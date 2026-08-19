@@ -4,7 +4,7 @@
 # Local ISO paths are passed as file URLs. Example for the locally provided ISO:
 # windows_iso_url = "file:///Users/levioister/Downloads/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
 windows_iso_url      = "file:///absolute/path/to/windows-server-2025.iso"
-windows_iso_checksum = "sha256:CHANGE_ME"
+windows_iso_checksum = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4"
 
 windows_image_name = "Windows Server 2025 SERVERSTANDARDCORE"
 
