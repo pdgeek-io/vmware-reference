@@ -49,6 +49,6 @@ autoinstall:
     - curtin in-target -- systemctl disable cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service
     - curtin in-target -- systemctl mask cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service
     - curtin in-target -- rm -rf /var/lib/cloud
-    # Enable weekly TRIM/UNMAP for thin-provisioned disk reclaim on PowerStore
+    # Enable TRIM/UNMAP for thin-provisioned disk reclaim.
     - curtin in-target -- systemctl enable fstrim.timer
     - "curtin in-target -- sed -i 's/^.*issue_discards = .*/\\tissue_discards = 1/' /etc/lvm/lvm.conf"

@@ -20,8 +20,7 @@
   ansible.builtin.debug:
     msg: "VMware Tools version: {{ vmtools_version.stdout }}"
 
-# Disk reclaim — fstrim sends SCSI UNMAP through pvscsi so PowerStore
-# can reclaim deleted blocks from thin-provisioned VMDKs.
+# Disk reclaim: fstrim sends SCSI UNMAP through pvscsi for thin-provisioned VMDKs.
 - name: Enable fstrim.timer for disk space reclaim
   ansible.builtin.systemd:
     name: fstrim.timer

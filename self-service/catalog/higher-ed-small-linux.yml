@@ -1,9 +1,9 @@
 # Higher-Ed Small Linux VM — first common infrastructure baseline.
-# Operators should treat this file as the request contract: Terraform consumes
-# the placement, sizing, network, tag, chargeback, DNS/IPAM, and hook metadata;
-# Ansible consumes the emitted metadata after Terraform renders inventory.
+# Operators should treat this file as the baseline request contract. Terraform
+# consumes the placement, sizing, network, tag, showback, DNS/IPAM placeholder,
+# and hook metadata; Ansible consumes the emitted Terraform inventory.
 name: Higher-Ed Small Linux
-description: Ubuntu 24.04 LTS baseline for research/dev workloads with DNS/IPAM placeholder, chargeback metadata, app hooks, and validation
+description: Ubuntu 24.04 LTS baseline for research/dev workloads with DNS/IPAM placeholder, showback metadata, Ansible handoff, and validation
 template: tpl-ubuntu-2404
 os_family: linux
 managed_by: VMware Automation
@@ -77,9 +77,6 @@ app_hooks:
   ansible_playbooks:
     - ansible/playbooks/higher-ed-linux-baseline.yml
   hook_directory: /opt/pdgeek/hooks.d
-  examples:
-    - ansible/playbooks/app-deploy-nginx.yml
-    - ansible/playbooks/app-deploy-docker.yml
 
 validation:
   tcp_ports:

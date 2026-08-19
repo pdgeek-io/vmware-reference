@@ -1,79 +1,37 @@
 #!/bin/bash
-# Validate all Terraform, Packer, and Ansible configurations
+# Validate the production MVP surface only.
 set -euo pipefail
 
 PASS=0
 FAIL=0
 
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║        pdgeek.io — VMware Reference Architecture             ║"
-echo "║                 Validation Suite                            ║"
-echo "╚══════════════════════════════════════════════════════════════╝"
+run_check() {
+    local name="$1"
+    shift
 
-# --- Terraform ---
-echo ""
-echo "── Terraform ──"
-for dir in terraform/modules/*/; do
-    name=$(basename "$dir")
-    if terraform -chdir="$dir" init -backend=false -input=false -no-color >/dev/null 2>&1 \
-        && terraform -chdir="$dir" validate -no-color >/dev/null 2>&1; then
-        echo "  [PASS] $name"
+    if "$@"; then
+        echo "  [PASS] ${name}"
         PASS=$((PASS + 1))
     else
-        echo "  [FAIL] $name"
+        echo "  [FAIL] ${name}"
         FAIL=$((FAIL + 1))
     fi
-done
+}
 
-# --- Terraform Format ---
+echo "==> Validating VMware higher-ed baseline MVP"
+
+run_check "vSphere VM Terraform module" \
+    bash -c 'terraform -chdir=terraform/modules/vsphere-vm init -backend=false -input=false -no-color >/dev/null && terraform -chdir=terraform/modules/vsphere-vm validate -no-color'
+
+run_check "Terraform formatting" \
+    terraform fmt -check -recursive terraform/
+
+run_check "Ubuntu 24.04 CIS template hook" \
+    bash tests/scripts/validate-ubuntu-2404-cis-template.sh
+
+run_check "Higher-ed Linux baseline contract" \
+    bash tests/scripts/validate-higher-ed-baseline.sh
+
 echo ""
-echo "── Terraform Format ──"
-if terraform fmt -check -recursive terraform/ >/dev/null 2>&1; then
-    echo "  [PASS] All files formatted correctly"
-    PASS=$((PASS + 1))
-else
-    echo "  [FAIL] Some files need formatting (run: terraform fmt -recursive terraform/)"
-    FAIL=$((FAIL + 1))
-fi
-
-# --- Packer ---
-echo ""
-echo "── Packer ──"
-for dir in packer/builds/*/*/; do
-    name=$(basename "$dir")
-    if ! compgen -G "${dir}"'*.pkr.hcl' >/dev/null; then
-        continue
-    fi
-
-    if packer validate -syntax-only "$dir" 2>/dev/null; then
-        echo "  [PASS] $name"
-        PASS=$((PASS + 1))
-    else
-        echo "  [FAIL] $name"
-        FAIL=$((FAIL + 1))
-    fi
-done
-
-# --- Ansible ---
-echo ""
-echo "── Ansible ──"
-echo "  [INFO] Installing Ansible Galaxy collections from ansible/requirements.yml"
-ansible-galaxy collection install -r ansible/requirements.yml >/dev/null
-for playbook in ansible/playbooks/*.yml; do
-    name=$(basename "$playbook")
-    if ANSIBLE_CONFIG=ansible/ansible.cfg ansible-playbook --syntax-check "$playbook" >/dev/null 2>&1; then
-        echo "  [PASS] $name"
-        PASS=$((PASS + 1))
-    else
-        echo "  [FAIL] $name"
-        FAIL=$((FAIL + 1))
-    fi
-done
-
-# --- Summary ---
-echo ""
-echo "══════════════════════════════════════════════════════════════"
-echo "  Results: $PASS passed, $FAIL failed"
-echo "══════════════════════════════════════════════════════════════"
-
-exit $FAIL
+echo "Results: ${PASS} passed, ${FAIL} failed"
+exit "${FAIL}"

@@ -65,7 +65,6 @@ vms = {
     app_hooks = {
       ansible_playbooks = [
         "ansible/playbooks/higher-ed-linux-baseline.yml",
-        "ansible/playbooks/app-deploy-nginx.yml",
       ]
       post_provision = [
         "ansible-playbook -i config/inventory/hosts.yml ansible/playbooks/higher-ed-linux-baseline.yml --limit hed-linux-01",
@@ -76,38 +75,5 @@ vms = {
       tcp_ports = [22]
       http_urls = []
     }
-  }
-  "db-01" = {
-    template      = "tpl-rhel-9"
-    resource_pool = "Development"
-    folder        = "Reference-VMs/Database"
-
-    # CPU: all cores in one socket to stay within a single NUMA node
-    cpu                  = 4
-    num_cores_per_socket = 4
-    cpu_hot_add          = true
-
-    # Memory: reserve 100% to prevent balloon driver from reclaiming DB buffer cache
-    memory_mb          = 16384
-    memory_hot_add     = true
-    memory_reservation = 16384
-
-    # Latency: high disables co-stop, halt-polling, and CPU scheduler optimizations
-    latency_sensitivity = "high"
-
-    os_disk_gb = 60
-    ip_address = "10.0.200.30"
-
-    # Spread DB disks across pvscsi controllers for maximum I/O throughput.
-    # Each controller gets its own queue (254 outstanding I/Os each).
-    #   controller 0 = OS disk (automatic)
-    #   controller 1 = data
-    #   controller 2 = logs (sequential write, no contention with data)
-    #   controller 3 = temp/swap
-    data_disks = [
-      { label = "pgdata", size_gb = 200, controller = 1 },
-      { label = "pglog",  size_gb = 50,  controller = 2 },
-      { label = "pgtmp",  size_gb = 50,  controller = 3 },
-    ]
   }
 }
