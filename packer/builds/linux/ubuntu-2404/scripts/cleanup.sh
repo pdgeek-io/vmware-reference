@@ -21,9 +21,6 @@ else
   rm -rf /etc/cloud /var/lib/cloud
 fi
 
-echo "==> Removing SSH host keys..."
-rm -f /etc/ssh/ssh_host_*
-
 echo "==> Clearing logs..."
 find /var/log -type f -exec truncate -s 0 {} \;
 truncate -s 0 /var/log/lastlog

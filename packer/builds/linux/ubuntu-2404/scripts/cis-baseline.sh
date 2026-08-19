@@ -145,4 +145,7 @@ handoff:
 EOF
 chmod 0644 "${EVIDENCE_FILE}"
 
+echo "==> Removing SSH host keys for clone uniqueness"
+rm -f /etc/ssh/ssh_host_*
+
 echo "==> CIS baseline evidence written to ${EVIDENCE_FILE}"
