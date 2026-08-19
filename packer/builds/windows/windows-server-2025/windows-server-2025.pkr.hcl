@@ -38,6 +38,7 @@ source "vsphere-iso" "windows-server-2025" {
   disk_controller_type = ["pvscsi"]
   notes                = "Windows Server 2025 template scaffold. Built by Packer on {{timestamp}}."
   tools_upgrade_policy = true
+  remote_cache_cleanup = true
 
   storage {
     disk_size             = var.disk_size_mb
@@ -49,14 +50,15 @@ source "vsphere-iso" "windows-server-2025" {
     network_card = "vmxnet3"
   }
 
-  # ISO: keep Windows install media first; attach VMware Tools from ESXi as the
-  # second CD-ROM when vmware_tools_iso_path is set.
+  # ISO: manual builds may use windows_iso_url. Pipeline builds should use
+  # windows_iso_paths with a datastore/content-library ISO path so the runner
+  # does not depend on workstation-local media.
   iso_url      = var.windows_iso_url
-  iso_checksum = var.windows_iso_checksum
-  iso_paths    = var.vmware_tools_iso_path != "" ? [var.vmware_tools_iso_path] : []
+  iso_checksum = var.windows_iso_url != "" ? var.windows_iso_checksum : "none"
+  iso_paths    = concat(var.windows_iso_paths, var.vmware_tools_iso_path != "" ? [var.vmware_tools_iso_path] : [])
 
-  cd_label = "PACKERDATA"
-  cd_content = {
+  floppy_label = "PACKERDATA"
+  floppy_content = {
     "Autounattend.xml" = templatefile("${path.root}/answer/Autounattend.xml.pkrtpl", {
       windows_image_name             = var.windows_image_name
       winrm_username                 = var.winrm_username
@@ -92,6 +94,9 @@ build {
   sources = ["source.vsphere-iso.windows-server-2025"]
 
   provisioner "powershell" {
+    environment_vars = [
+      "VMWARE_TOOLS_INSTALLER_URL=${var.vmware_tools_installer_url}",
+    ]
     scripts = [
       "${path.root}/scripts/install-vmware-tools.ps1",
     ]

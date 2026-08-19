@@ -1,4 +1,4 @@
-.PHONY: init build-templates build-template-ubuntu build-template-windows-server-2025 deploy-workloads deploy-higher-ed-baseline setup-tags validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template validate-windows-server-2025-template destroy help
+.PHONY: init build-templates build-template-ubuntu build-template-windows-server-2025 preflight-windows-server-2025-template deploy-workloads deploy-higher-ed-baseline setup-tags validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template validate-windows-server-2025-template destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -28,12 +28,15 @@ build-template-ubuntu: ## Build Ubuntu 24.04 template
 		-var-file="packer/config/common.pkrvars.hcl" \
 		$(PACKER_DIR)/linux/ubuntu-2404/
 
-build-template-windows-server-2025: ## Build Windows Server 2025 template scaffold (feature branch only)
+build-template-windows-server-2025: preflight-windows-server-2025-template ## Build Windows Server 2025 template scaffold (feature branch only)
 	@echo "==> Building Windows Server 2025 template scaffold..."
 	packer build -force \
 		-var-file="packer/config/vsphere.pkrvars.hcl" \
 		-var-file="packer/config/windows-server-2025.pkrvars.hcl" \
 		$(PACKER_DIR)/windows/windows-server-2025/
+
+preflight-windows-server-2025-template: ## Preflight Windows Server 2025 ISO, guest OS ID, and VMware Tools media
+	@pwsh -NoProfile -File scripts/preflight-windows-server-2025-template.ps1
 
 deploy-workloads: ## Deploy VMs from terraform/stacks/03-workloads
 	@echo "==> Deploying workload VMs..."

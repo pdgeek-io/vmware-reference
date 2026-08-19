@@ -37,15 +37,21 @@ variable "network_name" {
 }
 
 variable "windows_iso_url" {
-  description = "Local file URL or remote URL for the Windows Server 2025 ISO. Use an ignored pkrvars file for real local paths."
+  description = "Local file URL or remote URL for manual Windows Server 2025 builds. Prefer windows_iso_paths for pipeline builds."
   type        = string
-  default     = "file:///absolute/path/to/windows-server-2025.iso"
+  default     = ""
+}
+
+variable "windows_iso_paths" {
+  description = "Pipeline-safe vSphere datastore or content library paths for the Windows Server 2025 ISO. Example: [\"[datastore1] iso/windows-server-2025.iso\"]."
+  type        = list(string)
+  default     = []
 }
 
 variable "windows_iso_checksum" {
   description = "Checksum for windows_iso_url. Set to sha256:<digest> after validating local media."
   type        = string
-  default     = "none"
+  default     = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4"
 }
 
 variable "windows_image_name" {
@@ -55,9 +61,15 @@ variable "windows_image_name" {
 }
 
 variable "vmware_tools_iso_path" {
-  description = "Optional ESXi datastore path for the VMware Tools Windows ISO, for example [] /usr/lib/vmware/isoimages/windows.iso."
+  description = "Optional preflighted ESXi datastore path for the VMware Tools Windows ISO, for example [] /usr/lib/vmware/isoimages/windows.iso. Leave empty and use vmware_tools_installer_url when productLocker is not reliable."
   type        = string
-  default     = "[] /usr/lib/vmware/isoimages/windows.iso"
+  default     = ""
+}
+
+variable "vmware_tools_installer_url" {
+  description = "Optional HTTPS URL to a VMware Tools Windows installer reachable from the guest when vmware_tools_iso_path is not used."
+  type        = string
+  default     = ""
 }
 
 variable "vm_name" {

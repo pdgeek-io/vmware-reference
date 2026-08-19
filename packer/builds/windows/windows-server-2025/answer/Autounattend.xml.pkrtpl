@@ -99,7 +99,7 @@
       </AutoLogon>
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$volume = Get-Volume -FileSystemLabel 'PACKERDATA' -ErrorAction Stop | Select-Object -First 1; &amp; (Join-Path ($volume.DriveLetter + ':\') 'enable-winrm.ps1')"</CommandLine>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$script = Get-PSDrive -PSProvider FileSystem | ForEach-Object { Join-Path $_.Root 'enable-winrm.ps1' } | Where-Object { Test-Path $_ } | Select-Object -First 1; if (-not $script) { throw 'enable-winrm.ps1 not found on removable Packer media' }; &amp; $script"</CommandLine>
           <Description>Enable WinRM over HTTPS for Packer</Description>
           <Order>1</Order>
           <RequiresUserInput>false</RequiresUserInput>

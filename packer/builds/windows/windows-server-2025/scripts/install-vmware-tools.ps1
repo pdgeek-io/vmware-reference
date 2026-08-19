@@ -6,8 +6,14 @@ $setup = Get-Volume |
     Where-Object { Test-Path $_ } |
     Select-Object -First 1
 
+$installerUrl = $env:VMWARE_TOOLS_INSTALLER_URL
+if (-not $setup -and -not [string]::IsNullOrWhiteSpace($installerUrl)) {
+    $setup = 'C:\Windows\Temp\vmware-tools-setup.exe'
+    Invoke-WebRequest -Uri $installerUrl -OutFile $setup
+}
+
 if (-not $setup) {
-    throw 'VMware Tools setup64.exe was not found on attached CD-ROM media. Set vmware_tools_iso_path to a valid ESXi Windows tools ISO path.'
+    throw 'VMware Tools setup64.exe was not found on attached CD-ROM media, and VMWARE_TOOLS_INSTALLER_URL was not set. Preflight productLocker before setting vmware_tools_iso_path, or provide vmware_tools_installer_url.'
 }
 
 $logPath = 'C:\Windows\Temp\vmware-tools-install.log'
