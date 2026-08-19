@@ -55,6 +55,7 @@ grep -q 'windows2022srvNext_64Guest' "${PREFLIGHT_SCRIPT}"
 grep -q 'WINDOWS_SERVER_2025_ISO_VSPHERE_PATH' "${PREFLIGHT_SCRIPT}"
 grep -q 'WINDOWS_SERVER_2025_LOCAL_ISO_PATH' "${PREFLIGHT_SCRIPT}"
 grep -q 'ESXI_SSH_HOST' "${PREFLIGHT_SCRIPT}"
+grep -q 'sshpass -e ssh' "${PREFLIGHT_SCRIPT}"
 grep -q 'govc datastore.ls' "${PREFLIGHT_SCRIPT}"
 grep -q '/usr/lib/vmware/isoimages/windows.iso' "${PREFLIGHT_SCRIPT}"
 

@@ -92,6 +92,46 @@ function Test-GovcConfigured {
         ($env:VSPHERE_SERVER -and $env:VSPHERE_USER -and $env:VSPHERE_PASSWORD))
 }
 
+function Test-ESXiFile {
+    param(
+        [string]$SshHost,
+        [string]$RemotePath
+    )
+
+    $sshArgs = @(
+        '-o', 'ConnectTimeout=10',
+        '-o', 'StrictHostKeyChecking=accept-new'
+    )
+
+    $command = "test -f '$RemotePath' && echo present || echo missing"
+    if ($env:ESXI_ROOT_PASSWORD) {
+        if (-not (Test-CommandAvailable -Name 'sshpass')) {
+            return @{
+                Passed = $false
+                Detail = 'ESXI_ROOT_PASSWORD is set but sshpass is not available.'
+            }
+        }
+
+        $previousSshpass = $env:SSHPASS
+        try {
+            $env:SSHPASS = $env:ESXI_ROOT_PASSWORD
+            $sshResult = & sshpass -e ssh -o PubkeyAuthentication=no @sshArgs $SshHost $command 2>&1
+            return @{
+                Passed = ($LASTEXITCODE -eq 0 -and ($sshResult -join "`n") -match 'present')
+                Detail = "${SshHost}:${RemotePath}"
+            }
+        } finally {
+            $env:SSHPASS = $previousSshpass
+        }
+    }
+
+    $sshResult = & ssh @sshArgs $SshHost $command 2>&1
+    return @{
+        Passed = ($LASTEXITCODE -eq 0 -and ($sshResult -join "`n") -match 'present')
+        Detail = "${SshHost}:${RemotePath}"
+    }
+}
+
 function Set-GovcEnvironmentFromVsphere {
     if (-not $env:GOVC_URL -and $env:VSPHERE_SERVER) {
         $env:GOVC_URL = $env:VSPHERE_SERVER
@@ -153,8 +193,8 @@ Write-Host '         Windows Server 2025 SERVERDATACENTERCORE'
 Write-Host '         Windows Server 2025 SERVERDATACENTER'
 
 if (-not [string]::IsNullOrWhiteSpace($ESXiSshHost)) {
-    $sshResult = & ssh $ESXiSshHost "test -f '$ProductLockerToolsIso' && echo present || echo missing" 2>&1
-    Write-Check 'VMware Tools productLocker ISO' ($LASTEXITCODE -eq 0 -and ($sshResult -join "`n") -match 'present') "${ESXiSshHost}:${ProductLockerToolsIso}"
+    $toolsIsoResult = Test-ESXiFile -SshHost $ESXiSshHost -RemotePath $ProductLockerToolsIso
+    Write-Check 'VMware Tools productLocker ISO' $toolsIsoResult.Passed $toolsIsoResult.Detail
 } else {
     Write-Host '  [INFO] VMware Tools productLocker ISO check skipped; set ESXI_SSH_HOST to check /usr/lib/vmware/isoimages/windows.iso over SSH.'
 }
