@@ -1,0 +1,127 @@
+---
+# Higher-ed Linux baseline for the first common infrastructure build slice.
+# Applies common services, stages app hooks, and validates the requestable VM.
+- name: Configure higher-ed Linux baseline
+  hosts: "{{ target_hosts | default('higher_ed_linux') }}"
+  become: true
+
+  vars:
+    higher_ed_baseline:
+      department: "{{ department | default('Research') }}"
+      cost_center: "{{ cost_center | default('RC-1000') }}"
+      project: "{{ project | default('Shared-Research-Compute') }}"
+      environment: "{{ vm_environment | default('Development') }}"
+      owner: "{{ owner | default('research-it@example.edu') }}"
+      application: "{{ application | default('Shared-Linux-Service') }}"
+      app_owner: "{{ app_owner | default('research-it@example.edu') }}"
+      technical_owner: "{{ technical_owner | default('platform-engineering@example.edu') }}"
+      service_tier: "{{ service_tier | default('standard') }}"
+      backup_policy: "{{ backup_policy | default('daily_30_day') }}"
+      billing_model: "{{ billing_model | default('shared_services') }}"
+      lifecycle: "{{ lifecycle | default('annual_review') }}"
+      data_classification: "{{ data_classification | default('internal') }}"
+      dns_ipam_provider: "{{ dns_ipam_provider | default('placeholder') }}"
+      app_hook_dir: /opt/pdgeek/hooks.d
+    app_hook_commands: "{{ app_deploy_hooks | default([]) }}"
+    validation_tcp_ports: "{{ tcp_validation_ports | default([22]) }}"
+    higher_ed_manage_packages: true
+
+  roles:
+    - role: common
+    - role: vmware-guest
+
+  tasks:
+    - name: Install baseline validation packages
+      ansible.builtin.package:
+        name:
+          - bind-utils
+          - nc
+        state: present
+      when:
+        - higher_ed_manage_packages | bool
+        - ansible_facts.os_family == "RedHat"
+
+    - name: Install baseline validation packages on Debian
+      ansible.builtin.package:
+        name:
+          - dnsutils
+          - netcat-openbsd
+        state: present
+      when:
+        - higher_ed_manage_packages | bool
+        - ansible_facts.os_family == "Debian"
+
+    - name: Create platform metadata directory
+      ansible.builtin.file:
+        path: /etc/pdgeek
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Write higher-ed baseline metadata
+      ansible.builtin.copy:
+        dest: /etc/pdgeek/higher-ed-baseline.yml
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          department: {{ higher_ed_baseline.department }}
+          cost_center: {{ higher_ed_baseline.cost_center }}
+          project: {{ higher_ed_baseline.project }}
+          environment: {{ higher_ed_baseline.environment }}
+          owner: {{ higher_ed_baseline.owner }}
+          application: {{ higher_ed_baseline.application }}
+          app_owner: {{ higher_ed_baseline.app_owner }}
+          technical_owner: {{ higher_ed_baseline.technical_owner }}
+          service_tier: {{ higher_ed_baseline.service_tier }}
+          backup_policy: {{ higher_ed_baseline.backup_policy }}
+          billing_model: {{ higher_ed_baseline.billing_model }}
+          lifecycle: {{ higher_ed_baseline.lifecycle }}
+          data_classification: {{ higher_ed_baseline.data_classification }}
+          dns_ipam_provider: {{ higher_ed_baseline.dns_ipam_provider }}
+          hostname: {{ inventory_hostname }}
+          tags: {{ vm_tags | default([]) | to_json }}
+          chargeback: {{ chargeback | default({}) | to_json }}
+
+    - name: Create application hook directory
+      ansible.builtin.file:
+        path: "{{ higher_ed_baseline.app_hook_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Stage post-provision application hooks
+      ansible.builtin.copy:
+        dest: "{{ higher_ed_baseline.app_hook_dir }}/{{ '%02d' | format(ansible_loop.index) }}-app-hook.sh"
+        owner: root
+        group: root
+        mode: "0750"
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+          {{ item }}
+      loop: "{{ app_hook_commands }}"
+      loop_control:
+        extended: true
+      when: app_hook_commands | length > 0
+
+    - name: Validate configured DNS resolver
+      ansible.builtin.command: "getent hosts {{ inventory_hostname }}"
+      register: dns_lookup
+      changed_when: false
+
+    - name: Validate TCP service ports
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ item }}"
+        timeout: 5
+      loop: "{{ validation_tcp_ports }}"
+
+    - name: Report baseline validation
+      ansible.builtin.debug:
+        msg:
+          vm: "{{ inventory_hostname }}"
+          dns_result: "{{ dns_lookup.stdout }}"
+          validated_ports: "{{ validation_tcp_ports }}"

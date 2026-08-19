@@ -1,4 +1,5 @@
 #cloud-config
+ssh_pwauth: true
 autoinstall:
   version: 1
   locale: en_US.UTF-8
@@ -7,7 +8,16 @@ autoinstall:
   identity:
     hostname: ${hostname}
     username: ${username}
-    password: ${password}
+    password: '${password}'
+  network:
+    version: 2
+    renderer: networkd
+    ethernets:
+      vmware:
+        match:
+          name: "en*"
+        dhcp4: true
+        dhcp6: false
   ssh:
     install-server: true
     allow-pw: true
@@ -17,16 +27,28 @@ autoinstall:
     layout:
       name: lvm
   packages:
+    - openssh-server
     - open-vm-tools
     - python3
     - python3-pip
-    - cloud-init
     - curl
     - wget
     - jq
   late-commands:
     - echo '${username} ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/${username}
     - chmod 0440 /target/etc/sudoers.d/${username}
+    - "password_hash=$(printf '%s' '${password_hash_b64}' | base64 -d) && chroot /target id '${username}' >/dev/null 2>&1 || chroot /target useradd -m -s /bin/bash '${username}'"
+    - "password_hash=$(printf '%s' '${password_hash_b64}' | base64 -d) && chroot /target usermod -p \"$password_hash\" '${username}' && chroot /target usermod -aG sudo '${username}'"
+    - curtin in-target -- install -d -m 0755 /etc/ssh/sshd_config.d
+    - "printf '%s\n' 'PasswordAuthentication yes' 'KbdInteractiveAuthentication yes' 'PermitRootLogin no' > /target/etc/ssh/sshd_config.d/99-packer-build.conf"
+    - "printf '%s\n' 'network:' '  version: 2' '  renderer: networkd' '  ethernets:' '    vmware:' '      match:' '        name: \"en*\"' '      dhcp4: true' '      dhcp6: false' > /target/etc/netplan/01-packer-dhcp.yaml"
+    - curtin in-target -- systemctl enable systemd-networkd systemd-resolved open-vm-tools ssh
+    - curtin in-target -- ufw allow OpenSSH
+    - curtin in-target -- ufw --force disable
+    - touch /target/etc/cloud/cloud-init.disabled
+    - curtin in-target -- systemctl disable cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service
+    - curtin in-target -- systemctl mask cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service
+    - curtin in-target -- rm -rf /var/lib/cloud
     # Enable weekly TRIM/UNMAP for thin-provisioned disk reclaim on PowerStore
     - curtin in-target -- systemctl enable fstrim.timer
     - "curtin in-target -- sed -i 's/^.*issue_discards = .*/\\tissue_discards = 1/' /etc/lvm/lvm.conf"

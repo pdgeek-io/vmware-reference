@@ -28,12 +28,6 @@ No more 100+ unmanaged servers in closets. No more zombie hardware from grants t
 - Self-funding model — grants pay for usage, the pool grows
 - Reduced risk from unmanaged, unpatched, orphaned infrastructure
 
-### How to Sell This at Your University
-
-See the **[Adoption Playbook](docs/adoption-playbook.md)** — how to get executive buy-in, overcome department politics, handle the "I'll just use AWS" objection, and build a self-sustaining funding model.
-
----
-
 ## Product Positioning
 
 Open-source Day 2 IaC for a validated private cloud built around:
@@ -50,11 +44,15 @@ Validation boundary: Dell, VMware, storage, and network bring-up is treated as a
 
 Terraform owns infrastructure state after the platform exists: vSphere objects, VM lifecycle, networks, DNS/IPAM records, storage objects, tags, and placement.
 
-Ansible owns configuration and Day 2 operations: OS baseline, agents, patching, application deployment, service validation, backup checks, drift reports, remediation, and evidence.
+Packer owns hardened base images. Linux templates run a shared CIS-aligned baseline during image build before Terraform can deploy them as catalog VMs.
 
-ITSM stays the customer front door. ServiceNow, TeamDynamix, or a generic webhook adapter submits the request; the platform validates, plans, executes approved automation, updates CMDB/chargeback, and posts evidence back.
+Ansible owns configuration and Day 2 operations: OS finalization, agents, patching, application deployment, service validation, backup checks, drift reports, remediation, and evidence.
 
-For lab and PoC validation, the [VIS lab validation path](docs/vis-lab-validation.md) can provide VCF 9.1 supporting services while the repo proves service-catalog workflows such as VM provisioning, database deployment, application deployment, evidence capture, and UX feedback.
+VMware Automation is the expected service control plane for managed customer workflows. ITSM systems such as ServiceNow, TeamDynamix, or a generic webhook can still submit and approve requests, but VMware Automation owns the customer-facing service lifecycle while this repo provides the Terraform and Ansible implementation behind those services.
+
+For lab and PoC validation, the [vSphere lab validation path](docs/vsphere-lab-validation.md) checks the minimal ESXi + vCenter readiness surface while the repo proves service-catalog workflows such as VM provisioning, database deployment, application deployment, evidence capture, and UX feedback.
+
+The first materialized build is [Higher-Ed Small Linux](docs/higher-ed-baseline-mvp.md). It provisions a small Linux service VM, applies showback/ownership/backup/data-classification/managed-by tags, emits DNS/IPAM and app-hook handoff data, renders a Terraform-generated Ansible inventory, and runs the higher-ed Linux baseline playbook. The local Makefile path exists so the implementation can be validated directly while the repo grows toward VMware Automation-managed services.
 
 ## Under the Hood
 
@@ -141,12 +139,35 @@ make init
 make build-templates   # Ubuntu 24.04, RHEL 9, Windows 2022, Windows 2025
 ```
 
+Weekly template hygiene is handled by the GitLab scheduled Packer rebuild. See [docs/weekly-packer-rebuild.md](docs/weekly-packer-rebuild.md) for the Friday midnight schedule.
+
 ### 4. Launch the Operations Menu or API Portal
 
 ```bash
 make demo     # Interactive PowerCLI menu
 make portal   # ITSM-ready REST API (http://localhost:8080/api/docs)
 ```
+
+### First Build: Higher-Ed Small Linux
+
+This is the smallest end-to-end private-cloud automation slice:
+
+1. Packer builds a CIS-aligned Linux template and writes template evidence.
+2. `make setup-tags` creates the vSphere tag categories and baseline tag values used for showback, ownership, backup policy, data classification, lifecycle review, and VMware Automation management ownership.
+3. `terraform/stacks/03-workloads` clones the VM from the hardened template and applies the vSphere tags.
+4. Terraform outputs VM inventory, DNS/IPAM placeholder records, chargeback metadata, and app-deployment hooks.
+5. With `run_ansible_after_apply=true`, Terraform turns its own output into `config/generated/higher-ed-hosts.yml`.
+6. The same Terraform apply calls `ansible/playbooks/higher-ed-linux-baseline.yml`, which configures the guest, writes metadata evidence, and validates DNS plus TCP reachability.
+
+Operate it with:
+
+```bash
+make validate-higher-ed-baseline
+make setup-tags
+make deploy-higher-ed-baseline
+```
+
+Read [docs/higher-ed-baseline-mvp.md](docs/higher-ed-baseline-mvp.md) before changing the first build contract.
 
 ## Operations Menu
 

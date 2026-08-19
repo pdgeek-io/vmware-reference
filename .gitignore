@@ -21,6 +21,7 @@ config/powerscale.env
 config/itsm.env
 config/research-shares/*.yml
 config/lab.auto.tfvars
+config/generated/
 config/inventory/hosts.yml
 config/inventory/group_vars/*.yml
 !config/**/*.example

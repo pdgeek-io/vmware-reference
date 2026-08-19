@@ -20,6 +20,77 @@ provider "vsphere" {
   allow_unverified_ssl = true
 }
 
+locals {
+  vm_inventory = {
+    for name, vm in var.vms : name => {
+      ip_address = vm.ip_address
+      fqdn       = try(vm.dns_ipam.fqdn, "${name}.${var.domain}")
+      folder     = vm.folder
+      template   = vm.template
+      tags       = vm.tags
+      chargeback = vm.chargeback
+      validation = try(vm.validation, {})
+    }
+  }
+
+  vm_tag_specs = flatten([
+    for vm_name, vm in var.vms : [
+      for tag in vm.tags : {
+        key      = "${tag.category}/${tag.name}"
+        category = tag.category
+        name     = tag.name
+      }
+    ]
+  ])
+
+  vm_tag_specs_by_key = {
+    for tag in local.vm_tag_specs : tag.key => tag...
+  }
+
+  vm_tags_by_key = {
+    for key, tags in local.vm_tag_specs_by_key : key => tags[0]
+  }
+}
+
+resource "vsphere_tag_category" "workload" {
+  for_each = var.manage_vsphere_tags ? toset([for tag in local.vm_tags_by_key : tag.category]) : toset([])
+
+  name        = each.key
+  cardinality = "SINGLE"
+
+  associable_types = [
+    "VirtualMachine",
+  ]
+}
+
+resource "vsphere_tag" "workload" {
+  for_each = var.manage_vsphere_tags ? local.vm_tags_by_key : {}
+
+  name        = each.value.name
+  category_id = vsphere_tag_category.workload[each.value.category].id
+}
+
+data "vsphere_tag_category" "workload" {
+  for_each = var.manage_vsphere_tags ? toset([]) : toset([for tag in local.vm_tags_by_key : tag.category])
+
+  name = each.key
+}
+
+data "vsphere_tag" "workload" {
+  for_each = var.manage_vsphere_tags ? {} : local.vm_tags_by_key
+
+  name        = each.value.name
+  category_id = data.vsphere_tag_category.workload[each.value.category].id
+}
+
+locals {
+  vm_tag_ids_by_key = var.manage_vsphere_tags ? {
+    for key, tag in vsphere_tag.workload : key => tag.id
+    } : {
+    for key, tag in data.vsphere_tag.workload : key => tag.id
+  }
+}
+
 # --- Deploy VMs from catalog definitions ---
 module "workload_vms" {
   source   = "../../modules/vsphere-vm"
@@ -46,7 +117,43 @@ module "workload_vms" {
   disks                  = each.value.data_disks
 
   ip_address  = each.value.ip_address
+  netmask     = coalesce(each.value.netmask, var.netmask)
   gateway     = var.gateway
   dns_servers = var.dns_servers
   domain      = var.domain
+  userdata    = each.value.userdata
+  tags = [
+    for tag in each.value.tags : local.vm_tag_ids_by_key["${tag.category}/${tag.name}"]
+  ]
+}
+
+resource "terraform_data" "ansible_after_apply" {
+  count = var.run_ansible_after_apply ? 1 : 0
+
+  input = local.vm_inventory
+  triggers_replace = [
+    sha256(jsonencode(local.vm_inventory)),
+    var.ansible_handoff_version,
+  ]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+set -euo pipefail
+mkdir -p "$(dirname "${abspath("${path.root}/${var.ansible_inventory_path}")}")"
+cat > "${path.root}/.terraform/higher-ed-vm-inventory.json" <<'JSON'
+${jsonencode(local.vm_inventory)}
+JSON
+python3 "${abspath("${path.root}/${var.ansible_inventory_renderer}")}" \
+  --group "${var.ansible_inventory_group}" \
+  < "${path.root}/.terraform/higher-ed-vm-inventory.json" \
+  > "${abspath("${path.root}/${var.ansible_inventory_path}")}"
+ANSIBLE_CONFIG="${abspath("${path.root}/${var.ansible_config_path}")}" \
+  ansible-playbook \
+  -i "${abspath("${path.root}/${var.ansible_inventory_path}")}" \
+  "${abspath("${path.root}/${var.ansible_playbook_path}")}"
+EOT
+  }
+
+  depends_on = [module.workload_vms]
 }
