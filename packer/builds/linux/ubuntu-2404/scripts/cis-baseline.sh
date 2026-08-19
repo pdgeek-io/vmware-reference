@@ -21,6 +21,15 @@ fi
 
 echo "==> Applying ${CIS_PROFILE}"
 export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=l
+export NEEDRESTART_SUSPEND=1
+
+NEEDRESTART_CONF="/etc/needrestart/conf.d/99-pdgeek-packer.conf"
+if [ -d /etc/needrestart ]; then
+  install -d -m 0755 /etc/needrestart/conf.d
+  printf "%s\n" "\$nrconf{restart} = 'l';" >"${NEEDRESTART_CONF}"
+fi
+trap 'rm -f "${NEEDRESTART_CONF}"' EXIT
 
 apt-get update
 apt-get install -y --no-install-recommends \
