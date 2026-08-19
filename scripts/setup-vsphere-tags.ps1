@@ -1,20 +1,16 @@
 #!/usr/bin/env pwsh
-# pdgeek.io — Initialize chargeback tag categories in vCenter
-# Run once to set up the tag structure for cost tracking.
+# pdgeek.io - initialize vSphere tag categories for the higher-ed baseline.
+# Requires VSPHERE_SERVER, VSPHERE_USER, and VSPHERE_PASSWORD in the environment.
 
 $ErrorActionPreference = "Stop"
 
-$modulePath = Join-Path $PSScriptRoot "../../powercli/modules/PDGeekRef"
-Import-Module $modulePath -Force
-
-# Source environment
-$envFile = Join-Path $PSScriptRoot "../../config/powerstore.env"
-if (Test-Path $envFile) {
-    Get-Content $envFile | Where-Object { $_ -match '^export\s+(\w+)=(.*)' } | ForEach-Object {
-        [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2].Trim('"'))
-    }
+$requiredEnv = @("VSPHERE_SERVER", "VSPHERE_USER", "VSPHERE_PASSWORD")
+$missingEnv = $requiredEnv | Where-Object { -not [System.Environment]::GetEnvironmentVariable($_) }
+if ($missingEnv.Count -gt 0) {
+    throw "Missing required environment variables: $($missingEnv -join ', ')"
 }
 
+Import-Module VMware.VimAutomation.Core -ErrorAction Stop
 Connect-VIServer -Server $env:VSPHERE_SERVER -User $env:VSPHERE_USER -Password $env:VSPHERE_PASSWORD
 
 # Create tag categories
@@ -45,8 +41,8 @@ foreach ($cat in $categories) {
     }
 }
 
-# Create common department tags
-$departments = @("Engineering", "Sales", "Marketing", "IT", "Finance", "Operations", "Lab", "Research")
+# Create only the baseline values currently consumed by the validated catalog item.
+$departments = @("Research")
 $deptCategory = Get-TagCategory -Name "Department"
 foreach ($dept in $departments) {
     $existing = Get-Tag -Category $deptCategory -Name $dept -ErrorAction SilentlyContinue
@@ -56,8 +52,7 @@ foreach ($dept in $departments) {
     }
 }
 
-# Create environment tags
-$environments = @("Development", "Staging", "Production", "Lab")
+$environments = @("Development")
 $envCategory = Get-TagCategory -Name "Environment"
 foreach ($env in $environments) {
     $existing = Get-Tag -Category $envCategory -Name $env -ErrorAction SilentlyContinue
@@ -92,4 +87,4 @@ foreach ($tag in $baselineTags) {
     }
 }
 
-Write-Host "`nTag setup complete. Use Set-VMCostTags to assign tags to VMs." -ForegroundColor Cyan
+Write-Host "`nBaseline tag setup complete. Terraform applies these tags during deployment." -ForegroundColor Cyan

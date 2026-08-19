@@ -1,46 +1,80 @@
-# =============================================================================
-# Lab Environment Configuration
-# Copy this file to lab.auto.tfvars and fill in your values
-# =============================================================================
+# Higher-ed baseline lab configuration.
+# Copy to config/lab.auto.tfvars and fill in local values.
 
-# ─── vCenter Connection ──────────────────────────────────────────────
 vsphere_server   = "vcenter.lab.example.com"
 vsphere_user     = "administrator@vsphere.local"
 vsphere_password = "CHANGE_ME"
 
-# ─── vSphere Infrastructure ─────────────────────────────────────────
-datacenter_name  = "PDGeek-Lab-DC"
-cluster_name     = "PowerEdge-Cluster-01"
-datastore_name   = "PowerStore-DS01"
+datacenter_name = "PDGeek-Lab-DC"
+cluster_name    = "PowerEdge-Cluster-01"
+datastore_name  = "Workload-Datastore-01"
+network_name    = "DPG-Workload"
+gateway         = "10.0.200.1"
+dns_servers     = ["10.0.0.10", "10.0.0.11"]
+domain          = "lab.example.com"
+netmask         = 24
 
-# ─── ESXi Hosts ─────────────────────────────────────────────────────
-esxi_hosts = [
-  "esxi01.lab.example.com",
-  "esxi02.lab.example.com",
-  "esxi03.lab.example.com",
-]
+vms = {
+  "hed-linux-01" = {
+    template      = "tpl-ubuntu-2404"
+    resource_pool = "Development"
+    folder        = "Reference-VMs/App"
+    cpu           = 2
+    memory_mb     = 4096
+    os_disk_gb    = 40
+    ip_address    = "10.0.200.20"
+    data_disks    = []
 
-# ─── Networking ──────────────────────────────────────────────────────
-management_network   = "VM-Management"
-workload_network     = "VM-Workload"
-storage_network      = "VM-Storage"
-management_vlan_id   = 100
-workload_vlan_id     = 200
-storage_vlan_id      = 300
+    tags = [
+      { category = "Department", name = "Research" },
+      { category = "CostCenter", name = "RC-1000" },
+      { category = "Project", name = "Shared-Research-Compute" },
+      { category = "Environment", name = "Development" },
+      { category = "Owner", name = "Research-IT" },
+      { category = "Application", name = "Shared-Linux-Service" },
+      { category = "AppOwner", name = "Research-IT" },
+      { category = "TechnicalOwner", name = "Platform-Engineering" },
+      { category = "ServiceTier", name = "Standard" },
+      { category = "BackupPolicy", name = "Daily-30-Day" },
+      { category = "DataClassification", name = "Internal" },
+      { category = "BillingModel", name = "Shared-Services" },
+      { category = "Lifecycle", name = "Annual-Review" },
+      { category = "ManagedBy", name = "VMware-Automation" },
+    ]
 
-# ─── PowerStore ──────────────────────────────────────────────────────
-powerstore_endpoint = "powerstore.lab.example.com"
-powerstore_user     = "admin"
-powerstore_password = "CHANGE_ME"
+    chargeback = {
+      department          = "Research"
+      cost_center         = "RC-1000"
+      project             = "Shared-Research-Compute"
+      environment         = "Development"
+      billing_model       = "shared_services"
+      service_tier        = "standard"
+      backup_policy       = "daily_30_day"
+      application         = "Shared-Linux-Service"
+      app_owner           = "research-it@example.edu"
+      technical_owner     = "platform-engineering@example.edu"
+      monthly_budget_usd  = 75
+      data_classification = "internal"
+      lifecycle           = "annual_review"
+      managed_by          = "VMware Automation"
+    }
 
-# ─── VM Defaults ─────────────────────────────────────────────────────
-vm_domain       = "lab.example.com"
-vm_dns_servers  = ["10.0.0.10", "10.0.0.11"]
-vm_gateway      = "10.0.200.1"
-vm_subnet_mask  = "255.255.255.0"
-vm_network_cidr = "10.0.200.0/24"
+    dns_ipam = {
+      provider = "placeholder"
+      fqdn     = "hed-linux-01.lab.example.com"
+      ttl      = 3600
+      ptr      = true
+    }
 
-# ─── Resource Pools & Folders ────────────────────────────────────────
-resource_pool_name = "Reference-Lab"
-vm_folder_path     = "Reference-VMs"
-template_folder    = "Templates"
+    app_hooks = {
+      ansible_playbooks = [
+        "ansible/playbooks/higher-ed-linux-baseline.yml",
+      ]
+    }
+
+    validation = {
+      tcp_ports = [22]
+      http_urls = []
+    }
+  }
+}

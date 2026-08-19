@@ -19,7 +19,7 @@ variable "cluster_name" {
 }
 variable "datastore_name" {
   type    = string
-  default = "PowerStore-DS01"
+  default = "Workload-Datastore-01"
 }
 variable "network_name" {
   type    = string

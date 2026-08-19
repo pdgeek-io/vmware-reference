@@ -1,4 +1,4 @@
-.PHONY: init build-templates deploy-workloads deploy-higher-ed-baseline deploy-three-tier deploy-research-storage demo portal chargeback setup-tags test validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template destroy help
+.PHONY: init build-templates build-template-ubuntu deploy-workloads deploy-higher-ed-baseline setup-tags validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -10,29 +10,16 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
 
-# ─── Initialization ──────────────────────────────────────────────────
-
-init: ## Initialize all tools (Terraform, Ansible Galaxy, Packer plugins)
-	@echo "==> Initializing Terraform stacks..."
-	@for stack in $(TERRAFORM_DIR)/*/; do \
-		echo "  -> $${stack}"; \
-		terraform -chdir=$${stack} init -upgrade; \
-	done
+init: ## Initialize Terraform, Ansible Galaxy, and Packer for the baseline
+	@echo "==> Initializing Terraform workload stack..."
+	terraform -chdir=$(TERRAFORM_DIR)/03-workloads init -upgrade
 	@echo "==> Installing Ansible Galaxy collections..."
 	ansible-galaxy collection install -r $(ANSIBLE_DIR)/requirements.yml --force
 	@echo "==> Installing Packer plugins..."
 	packer init $(PACKER_DIR)/linux/ubuntu-2404/
-	packer init $(PACKER_DIR)/linux/rhel-9/
-	packer init $(PACKER_DIR)/linux/rocky-9/
-	packer init $(PACKER_DIR)/windows/windows-server-2022/
-	packer init $(PACKER_DIR)/windows/windows-server-2025/
-	@echo "==> Initializing PowerScale Terraform stack..."
-	terraform -chdir=$(TERRAFORM_DIR)/04-research-storage init -upgrade
 	@echo "==> Initialization complete."
 
-# ─── VM Template Factory ─────────────────────────────────────────────
-
-build-templates: build-template-ubuntu build-template-rhel build-template-rocky build-template-windows build-template-windows-2025 ## Build all VM templates
+build-templates: build-template-ubuntu ## Build the validated Ubuntu 24.04 VM template
 
 build-template-ubuntu: ## Build Ubuntu 24.04 template
 	@echo "==> Building Ubuntu 24.04 template..."
@@ -41,37 +28,7 @@ build-template-ubuntu: ## Build Ubuntu 24.04 template
 		-var-file="packer/config/common.pkrvars.hcl" \
 		$(PACKER_DIR)/linux/ubuntu-2404/
 
-build-template-rhel: ## Build RHEL 9 template
-	@echo "==> Building RHEL 9 template..."
-	packer build -force \
-		-var-file="packer/config/vsphere.pkrvars.hcl" \
-		-var-file="packer/config/common.pkrvars.hcl" \
-		$(PACKER_DIR)/linux/rhel-9/
-
-build-template-rocky: ## Build Rocky Linux 9 template
-	@echo "==> Building Rocky Linux 9 template..."
-	packer build -force \
-		-var-file="packer/config/vsphere.pkrvars.hcl" \
-		-var-file="packer/config/common.pkrvars.hcl" \
-		$(PACKER_DIR)/linux/rocky-9/
-
-build-template-windows: ## Build Windows Server 2022 template
-	@echo "==> Building Windows Server 2022 template..."
-	packer build -force \
-		-var-file="packer/config/vsphere.pkrvars.hcl" \
-		-var-file="packer/config/common.pkrvars.hcl" \
-		$(PACKER_DIR)/windows/windows-server-2022/
-
-build-template-windows-2025: ## Build Windows Server 2025 template
-	@echo "==> Building Windows Server 2025 template..."
-	packer build -force \
-		-var-file="packer/config/vsphere.pkrvars.hcl" \
-		-var-file="packer/config/common.pkrvars.hcl" \
-		$(PACKER_DIR)/windows/windows-server-2025/
-
-# ─── VM Deployments ──────────────────────────────────────────────────
-
-deploy-workloads: ## Deploy VMs from templates via Terraform
+deploy-workloads: ## Deploy VMs from terraform/stacks/03-workloads
 	@echo "==> Deploying workload VMs..."
 	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve
 
@@ -80,48 +37,11 @@ deploy-higher-ed-baseline: ## Deploy first higher-ed VM with Terraform, then con
 	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve \
 		-var run_ansible_after_apply=true
 
-deploy-three-tier: ## Deploy three-tier web application (nginx + Flask + PostgreSQL)
-	@echo "==> Deploying three-tier application..."
-	terraform -chdir=reference-vms/three-tier-web-app apply -auto-approve
-	ansible-playbook -i $(CONFIG_DIR)/inventory/hosts.yml \
-		reference-vms/three-tier-web-app/ansible-playbook.yml
+setup-tags: ## Initialize baseline vSphere tag categories and values
+	@echo "==> Setting up baseline vSphere tags..."
+	pwsh -File scripts/setup-vsphere-tags.ps1
 
-# ─── Research Storage (PowerScale) ────────────────────────────────────
-
-deploy-research-storage: ## Provision research NFS shares on PowerScale
-	@echo "==> Deploying research storage shares..."
-	terraform -chdir=$(TERRAFORM_DIR)/04-research-storage apply -auto-approve
-
-destroy-research-storage: ## Remove research shares from PowerScale
-	@echo "==> WARNING: This will remove all research shares."
-	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	terraform -chdir=$(TERRAFORM_DIR)/04-research-storage destroy -auto-approve
-
-# ─── Self-Service & Operations ───────────────────────────────────────
-
-demo: ## Launch interactive Day 2 operations menu
-	@echo "==> Launching Day 2 operations menu..."
-	pwsh -File powercli/scripts/self-service-menu.ps1
-
-portal: ## Start the self-service API portal (ITSM-ready)
-	@echo "==> Starting self-service API portal..."
-	@echo "    Docs: http://localhost:8080/api/docs"
-	@if [ -f $(CONFIG_DIR)/itsm.env ]; then . $(CONFIG_DIR)/itsm.env; fi
-	cd self-service/api && python -m uvicorn app:app --reload --port 8080
-
-# ─── Chargeback / Showback ───────────────────────────────────────────
-
-setup-tags: ## Initialize chargeback tag categories in vCenter
-	@echo "==> Setting up chargeback tags..."
-	pwsh -File chargeback/templates/tags-setup.ps1
-
-chargeback: ## Generate chargeback report
-	@echo "==> Generating chargeback report..."
-	pwsh -Command "Import-Module ./powercli/modules/PDGeekRef; Get-VMChargeback -OutputFormat CSV"
-
-# ─── Validation and Testing ──────────────────────────────────────────
-
-validate: ## Validate all Terraform, Packer, and Ansible configs
+validate: ## Validate the near-term baseline
 	@bash tests/scripts/validate-all.sh
 
 validate-vsphere-lab: ## Validate vSphere lab readiness for the smallest API lab
@@ -133,14 +53,8 @@ validate-higher-ed-baseline: ## Validate first higher-ed common infrastructure s
 validate-ubuntu-2404-cis-template: ## Validate Ubuntu 24.04 Packer CIS baseline hook
 	@bash tests/scripts/validate-ubuntu-2404-cis-template.sh
 
-test: ## Run smoke tests against deployed infrastructure
-	@bash tests/scripts/smoke-test.sh
-
-# ─── Teardown ────────────────────────────────────────────────────────
-
-destroy: ## Destroy all deployed VMs (in reverse order)
-	@echo "==> WARNING: This will destroy all deployed VMs."
+destroy: ## Destroy the baseline workload stack
+	@echo "==> WARNING: This will destroy all deployed VMs in terraform/stacks/03-workloads."
 	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	-terraform -chdir=reference-vms/three-tier-web-app destroy -auto-approve
-	-terraform -chdir=$(TERRAFORM_DIR)/03-workloads destroy -auto-approve
+	terraform -chdir=$(TERRAFORM_DIR)/03-workloads destroy -auto-approve
 	@echo "==> Teardown complete."

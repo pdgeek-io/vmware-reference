@@ -19,7 +19,7 @@ variable "cluster_name" {
 }
 variable "datastore_name" {
   type    = string
-  default = "PowerStore-Templates"
+  default = "Template-Datastore-01"
 }
 variable "template_folder" {
   type    = string
@@ -32,7 +32,7 @@ variable "network_name" {
 
 variable "iso_path" {
   type    = string
-  default = "[PowerStore-Templates] ISO/ubuntu-24.04.1-live-server-amd64.iso"
+  default = "[Template-Datastore-01] ISO/ubuntu-24.04.1-live-server-amd64.iso"
 }
 
 variable "build_username" {
