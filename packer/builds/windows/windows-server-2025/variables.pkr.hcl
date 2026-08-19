@@ -37,15 +37,15 @@ variable "network_name" {
 }
 
 variable "windows_iso_url" {
-  description = "Local file URL or remote URL for manual Windows Server 2025 builds. Prefer windows_iso_paths for pipeline builds."
+  description = "Local file URL or remote URL for manual Windows Server 2025 builds. Prefer windows_iso_path for pipeline builds."
   type        = string
   default     = ""
 }
 
-variable "windows_iso_paths" {
-  description = "Pipeline-safe vSphere datastore or content library paths for the Windows Server 2025 ISO. Example: [\"[datastore1] iso/windows-server-2025.iso\"]."
-  type        = list(string)
-  default     = []
+variable "windows_iso_path" {
+  description = "Pipeline-safe vSphere datastore or content library path for the Windows Server 2025 ISO. Example: \"[datastore1] iso/windows-server-2025.iso\"."
+  type        = string
+  default     = ""
 }
 
 variable "windows_iso_checksum" {

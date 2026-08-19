@@ -3,12 +3,11 @@
 
 # Pipeline builds should use a vSphere datastore or content library ISO path so
 # the runner does not depend on workstation-local media.
-windows_iso_paths = [
-  "[datastore1] iso/windows-server-2025.iso",
-]
+windows_iso_path = "[datastore1] iso/windows-server-2025.iso"
 
 # Manual workstation builds may use a local file URL instead. Do not set both
-# windows_iso_paths and windows_iso_url for a real build.
+# windows_iso_path and windows_iso_url for a real build.
+# windows_iso_path = ""
 # windows_iso_url = "file:///Users/levioister/Downloads/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
 windows_iso_url      = ""
 windows_iso_checksum = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4"

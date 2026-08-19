@@ -27,12 +27,10 @@ cp packer/config/windows-server-2025.pkrvars.hcl.example \
 ```
 
 For pipeline builds, upload the ISO to a vSphere datastore or content library
-and set `windows_iso_paths`:
+and set `windows_iso_path`:
 
 ```hcl
-windows_iso_paths = [
-  "[datastore1] iso/windows-server-2025.iso",
-]
+windows_iso_path = "[datastore1] iso/windows-server-2025.iso"
 windows_iso_url = ""
 windows_iso_checksum = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4"
 ```
@@ -40,12 +38,12 @@ windows_iso_checksum = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4a
 For manual workstation builds, use a local file URL instead:
 
 ```hcl
-windows_iso_paths = []
+windows_iso_path = ""
 windows_iso_url = "file:///Users/levioister/Downloads/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
 windows_iso_checksum = "sha256:cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4"
 ```
 
-Do not set both `windows_iso_paths` and `windows_iso_url` for a real build.
+Do not set both `windows_iso_path` and `windows_iso_url` for a real build.
 
 The local ISO was checked on 2026-08-19. Its SHA-256 checksum is
 `cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4`.
@@ -105,12 +103,47 @@ For content library ISO paths, verify the item before building:
 govc library.ls "LibraryName/ItemName"
 ```
 
+## Pipeline ISO Staging
+
+Pipeline runners should consume a vSphere-hosted Windows ISO, not a workstation
+`file://` path.
+
+Datastore upload command trail:
+
+```bash
+export GOVC_URL="vcenter.lab.example.com"
+export GOVC_USERNAME="administrator@vsphere.local"
+export GOVC_PASSWORD="..."
+export GOVC_INSECURE=1
+export WINDOWS_SERVER_2025_LOCAL_ISO_PATH="/path/to/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
+
+govc datastore.mkdir -ds "datastore1" iso
+govc datastore.upload -ds "datastore1" \
+  "$WINDOWS_SERVER_2025_LOCAL_ISO_PATH" \
+  iso/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO
+govc datastore.ls -ds "datastore1" \
+  iso/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO
+```
+
+Content library staging can also work with Packer `iso_paths`, but validate the
+library item path first because content library paths resolve differently from
+datastore paths:
+
+```bash
+govc library.ls
+govc library.ls "LibraryName/ItemName"
+```
+
+Do not run upload commands from shared automation until the datastore or content
+library location, naming convention, retention owner, and overwrite policy are
+approved.
+
 ## First Build
 
 Before running Packer in a pipeline:
 
 1. Upload the Windows Server 2025 ISO to a vSphere datastore or content library.
-2. Set `windows_iso_paths` to that datastore or content library path.
+2. Set `windows_iso_path` to that datastore or content library path.
 3. Verify `vmware_tools_iso_path` exists on the target ESXi host, or leave it
    empty and set `vmware_tools_installer_url` to an installer URL reachable
    from the guest.
@@ -143,6 +176,21 @@ run can stop before final cleanup, leaving a temporary VM with attached OS,
 VMware Tools, or generated floppy media. Remove the failed
 `tpl-windows-server-2025` VM before retrying, and confirm no generated removable
 media or stale attached ISOs remain on the VM object.
+
+Non-destructive inspection command trail:
+
+```bash
+govc vm.info "Templates/tpl-windows-server-2025"
+govc device.ls -vm "Templates/tpl-windows-server-2025"
+govc datastore.ls -ds "datastore1" iso/
+```
+
+Only after confirming a failed temporary VM is not a usable template, remove it
+with an explicit command trail:
+
+```bash
+govc vm.destroy "Templates/tpl-windows-server-2025"
+```
 
 ## Promotion Blockers
 

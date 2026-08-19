@@ -51,11 +51,19 @@ source "vsphere-iso" "windows-server-2025" {
   }
 
   # ISO: manual builds may use windows_iso_url. Pipeline builds should use
-  # windows_iso_paths with a datastore/content-library ISO path so the runner
-  # does not depend on workstation-local media.
+  # windows_iso_path with a datastore/content-library ISO path so the runner
+  # does not depend on workstation-local media. VMware Tools is the only
+  # optional second ISO.
   iso_url      = var.windows_iso_url
   iso_checksum = var.windows_iso_url != "" ? var.windows_iso_checksum : "none"
-  iso_paths    = concat(var.windows_iso_paths, var.vmware_tools_iso_path != "" ? [var.vmware_tools_iso_path] : [])
+  iso_paths = var.windows_iso_path != "" && var.vmware_tools_iso_path != "" ? [
+    var.windows_iso_path,
+    var.vmware_tools_iso_path,
+    ] : var.windows_iso_path != "" ? [
+    var.windows_iso_path,
+    ] : var.vmware_tools_iso_path != "" ? [
+    var.vmware_tools_iso_path,
+  ] : []
 
   floppy_label = "PACKERDATA"
   floppy_content = {
