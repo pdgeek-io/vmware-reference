@@ -1,0 +1,90 @@
+# Higher-Ed Small Linux VM — first common infrastructure baseline.
+# Operators should treat this file as the request contract: Terraform consumes
+# the placement, sizing, network, tag, chargeback, DNS/IPAM, and hook metadata;
+# Ansible consumes the emitted metadata after Terraform renders inventory.
+name: Higher-Ed Small Linux
+description: Ubuntu 24.04 LTS baseline for research/dev workloads with DNS/IPAM placeholder, chargeback metadata, app hooks, and validation
+template: tpl-ubuntu-2404
+os_family: linux
+managed_by: VMware Automation
+
+compute:
+  cpu: 2
+  memory_mb: 4096
+
+storage:
+  os_disk_gb: 40
+  data_disks: []
+
+network:
+  port_group: DPG-Workload
+  dns_ipam:
+    provider: placeholder
+    record_type: A
+    ttl: 3600
+    ptr: true
+
+resource_pool: Development
+folder: Reference-VMs/App
+
+tags:
+  - category: Department
+    name: Research
+  - category: CostCenter
+    name: RC-1000
+  - category: Project
+    name: Shared-Research-Compute
+  - category: Environment
+    name: Development
+  - category: Owner
+    name: Research-IT
+  - category: Application
+    name: Shared-Linux-Service
+  - category: AppOwner
+    name: Research-IT
+  - category: TechnicalOwner
+    name: Platform-Engineering
+  - category: ServiceTier
+    name: Standard
+  - category: BackupPolicy
+    name: Daily-30-Day
+  - category: DataClassification
+    name: Internal
+  - category: BillingModel
+    name: Shared-Services
+  - category: Lifecycle
+    name: Annual-Review
+  - category: ManagedBy
+    name: VMware-Automation
+
+chargeback:
+  department: Research
+  cost_center: RC-1000
+  project: Shared-Research-Compute
+  environment: Development
+  billing_model: shared_services
+  service_tier: standard
+  backup_policy: daily_30_day
+  application: Shared-Linux-Service
+  app_owner: research-it@example.edu
+  technical_owner: platform-engineering@example.edu
+  monthly_budget_usd: 75
+  data_classification: internal
+  lifecycle: annual_review
+  managed_by: VMware Automation
+
+app_hooks:
+  ansible_playbooks:
+    - ansible/playbooks/higher-ed-linux-baseline.yml
+  hook_directory: /opt/pdgeek/hooks.d
+  examples:
+    - ansible/playbooks/app-deploy-nginx.yml
+    - ansible/playbooks/app-deploy-docker.yml
+
+validation:
+  tcp_ports:
+    - 22
+  evidence:
+    - vmware_tools_running
+    - dns_lookup
+    - baseline_metadata_file

@@ -14,7 +14,7 @@ This platform delivers outcomes, not infrastructure:
 - **"Your grant requirements are met"** — not "we're NIST 800-171 compliant"
 - **"Your spend is tracked"** — not "we run chargeback reports"
 
-The underlying technology is an implementation detail. Researchers interact with a self-service catalog and get results. See the [Adoption Playbook](adoption-playbook.md) for how to position and sell this at your institution.
+The underlying technology is an implementation detail. Researchers interact with a self-service catalog and get results.
 
 ---
 
@@ -37,6 +37,8 @@ This repo validates and automates the Day 2 layer:
 - Storage objects exposed to the virtualization layer
 - ITSM request intake, approvals, CMDB updates, chargeback/showback, and evidence
 - Ansible configuration, patching, compliance checks, and application deployment
+
+VMware Automation is the expected service control plane for managed customer workflows. This repo provides the implementation artifacts behind those services: Terraform for VM and vSphere state, Ansible for guest configuration and validation, and metadata outputs for evidence, CMDB, and showback.
 
 ## Technical Reference
 
@@ -97,7 +99,7 @@ For per-VM storage policies, PowerStore supports VMware vVols via its built-in V
 
 3. Packer
    └── Builds OS templates (Ubuntu, RHEL, Windows)
-   └── Stores as vSphere templates
+   └── Applies CIS-aligned template baseline before storing as vSphere templates
 
 4. Terraform (03-workloads) or PowerCLI
    └── Deploys VMs from templates
@@ -108,11 +110,22 @@ For per-VM storage policies, PowerStore supports VMware vVols via its built-in V
    └── App installation (nginx, PostgreSQL, Docker)
 ```
 
+## First Build Contract
+
+The first concrete build is `higher-ed-small-linux`. It is intentionally narrow so the repo has one clean executable pattern before adding more catalog items.
+
+Operator flow:
+
+1. `make setup-tags` creates tag categories and baseline values in vCenter.
+2. `make deploy-higher-ed-baseline` runs Terraform against `terraform/stacks/03-workloads`.
+3. Terraform emits `vm_inventory`, `dns_ipam_placeholders`, and `app_deployment_hooks`.
+4. When `run_ansible_after_apply=true`, Terraform calls `scripts/render-terraform-inventory.py` during apply to convert `vm_inventory` into an Ansible inventory group named `higher_ed_linux`.
+5. Terraform then calls `ansible/playbooks/higher-ed-linux-baseline.yml` through `ansible-playbook` before the apply returns.
+
+The template baseline is part of the operational contract too. Linux catalog builds must start from Packer templates that run a CIS-aligned hardening hook, applying shared controls and writing template evidence before Terraform deploys the VM.
+
+Tagging is part of the operational contract, not decoration. The first build carries tags for department, cost center, project, environment, owner, application, app owner, technical owner, service tier, backup policy, data classification, billing model, lifecycle review, and `ManagedBy/VMware-Automation`. These tags support higher-ed showback, shared-services consumption reporting, backup ownership, support routing, VMware Automation lifecycle ownership, and CMDB reconciliation.
+
 ## VCF-Specific Considerations
 
-When running VMware Cloud Foundation instead of standalone vSphere:
-- Treat SDDC Manager and workload domain bring-up as Day 0/1 prerequisites unless explicitly working in a lab branch
-- Use the `terraform/stacks/04-vcf-domain/` stack only where the customer architecture allows automation at that layer
-- NSX is expected for VCF designs, so networking may use NSX segments instead of DVS port groups
-- SDDC Manager handles lifecycle management
-- vSAN may be used instead of/alongside PowerStore for HCI storage
+When running VMware Cloud Foundation instead of standalone vSphere, treat SDDC Manager, workload domains, NSX, and lifecycle management as Day 0/1 platform prerequisites unless a future branch explicitly adds tested automation for that layer. This repo currently validates and automates the Day 2 service surface after the VCF/VVF baseline exists.

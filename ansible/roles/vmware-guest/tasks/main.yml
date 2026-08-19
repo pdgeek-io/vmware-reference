@@ -3,6 +3,7 @@
   ansible.builtin.package:
     name: open-vm-tools
     state: present
+  when: vmware_guest_manage_packages | default(true) | bool
 
 - name: Enable and start vmtoolsd
   ansible.builtin.service:
@@ -33,4 +34,4 @@
     regexp: '^\s*issue_discards\s*='
     line: '  issue_discards = 1'
     backrefs: true
-  when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+  when: ansible_facts.os_family in ["RedHat", "Debian"]

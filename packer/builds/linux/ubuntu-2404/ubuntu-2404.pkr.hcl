@@ -56,27 +56,41 @@ source "vsphere-iso" "ubuntu-2404" {
   # Cloud-init autoinstall via HTTP
   http_content = {
     "/user-data" = templatefile("${path.root}/http/user-data", {
-      hostname = "tpl-ubuntu-2404"
-      username = var.build_username
-      password = var.build_password_hash
-      ssh_key  = var.ssh_public_key
+      hostname          = "tpl-ubuntu-2404"
+      username          = var.build_username
+      password          = var.build_password_hash
+      password_hash_b64 = base64encode(var.build_password_hash)
+      ssh_key           = var.ssh_public_key
     })
     "/meta-data" = ""
   }
 
-  boot_wait = "5s"
+  # Also attach NoCloud seed data as cidata so the installer does not depend on
+  # early-boot network access to the temporary Packer HTTP server.
+  cd_label = "cidata"
+  cd_content = {
+    "user-data" = templatefile("${path.root}/http/user-data", {
+      hostname          = "tpl-ubuntu-2404"
+      username          = var.build_username
+      password          = var.build_password_hash
+      password_hash_b64 = base64encode(var.build_password_hash)
+      ssh_key           = var.ssh_public_key
+    })
+    "meta-data" = ""
+  }
+
+  boot_wait = "10s"
   boot_command = [
-    "<esc><wait>",
-    "e<wait>",
-    "<down><down><down><end>",
-    " autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
-    "<f10>"
+    "c<wait3s>",
+    "linux /casper/vmlinuz --- autoinstall ds=nocloud;<enter><wait3s>",
+    "initrd /casper/initrd<enter><wait3s>",
+    "boot<enter><wait>"
   ]
 
   # SSH communicator
-  ssh_username         = var.build_username
-  ssh_password         = var.build_password
-  ssh_timeout          = "30m"
+  ssh_username           = var.build_username
+  ssh_password           = var.build_password
+  ssh_timeout            = "30m"
   ssh_handshake_attempts = 100
 
   # Convert to template
@@ -91,15 +105,8 @@ build {
 
   # Wait for cloud-init to complete
   provisioner "shell" {
-    inline = ["cloud-init status --wait"]
-  }
-
-  # Base configuration via Ansible
-  provisioner "ansible" {
-    playbook_file = "${path.root}/../../common/ansible-packer.yml"
-    user          = var.build_username
-    extra_arguments = [
-      "--extra-vars", "ansible_become=true"
+    inline = [
+      "if [ -f /etc/cloud/cloud-init.disabled ]; then echo 'cloud-init disabled for Packer first boot'; else cloud-init status --wait; fi"
     ]
   }
 
@@ -108,6 +115,29 @@ build {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts = [
       "${path.root}/scripts/cleanup.sh"
+    ]
+  }
+
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = [
+      "${path.root}/../common/scripts/cleanup-security-agents.sh"
+    ]
+  }
+
+  # CIS baseline hardening is intentionally the final guest-side step.
+  # Some controls, such as SSH password-auth disabling, can prevent later
+  # Packer shell provisioners from reconnecting when a build uses passwords.
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    environment_vars = [
+      "ENABLE_CIS_BASELINE=${var.enable_cis_baseline}",
+      "CIS_PROFILE=${var.cis_profile}",
+      "CIS_DISABLE_PASSWORD_SSH=${var.cis_disable_password_ssh}",
+      "CIS_APPLY_KERNEL_HARDENING=${var.cis_apply_kernel_hardening}"
+    ]
+    scripts = [
+      "${path.root}/scripts/cis-baseline.sh"
     ]
   }
 }

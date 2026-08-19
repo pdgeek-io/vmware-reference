@@ -22,7 +22,7 @@ source "vsphere-iso" "windows-2025" {
   datastore  = var.datastore_name
   folder     = var.template_folder
 
-  vm_name              = "tpl-windows-2025"
+  vm_name = "tpl-windows-2025"
   # vSphere uses "windows2019srvNext_64Guest" for Server 2022+ (no distinct 2025 type yet)
   guest_os_type        = "windows2019srvNext_64Guest"
   firmware             = "efi"
@@ -46,8 +46,13 @@ source "vsphere-iso" "windows-2025" {
     var.vmtools_iso_path,
   ]
 
+  floppy_content = {
+    "Autounattend.xml" = templatefile("${path.root}/scripts/Autounattend.xml", {
+      build_password = var.build_password
+    })
+  }
+
   floppy_files = [
-    "${path.root}/scripts/Autounattend.xml",
     "${path.root}/../windows-server-2022/scripts/configure-winrm.ps1",
     "${path.root}/../windows-server-2022/scripts/install-vmtools.ps1",
   ]
@@ -89,12 +94,15 @@ build {
   }
 
   provisioner "powershell" {
+    script = "${path.root}/../common/scripts/cleanup-windows-template.ps1"
+  }
+
+  provisioner "powershell" {
+    script = "${path.root}/../common/scripts/cleanup-security-agents.ps1"
+  }
+
+  provisioner "powershell" {
     inline = [
-      "# Clean up for template",
-      "Remove-Item -Path $env:TEMP\\* -Recurse -Force -ErrorAction SilentlyContinue",
-      "Clear-EventLog -LogName Application, System, Security -ErrorAction SilentlyContinue",
-      "Stop-Service -Name wuauserv -Force",
-      "Remove-Item -Path C:\\Windows\\SoftwareDistribution\\* -Recurse -Force -ErrorAction SilentlyContinue",
       "& C:\\Windows\\System32\\Sysprep\\sysprep.exe /generalize /oobe /shutdown /quiet",
     ]
   }

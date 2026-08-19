@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get from zero to a running three-tier app in 15 minutes.
+Get from a validated vSphere lab to the first higher-ed common infrastructure build.
 
 ## Prerequisites Checklist
 
@@ -32,44 +32,62 @@ cp config/inventory/hosts.yml.example config/inventory/hosts.yml
 make init
 ```
 
-## Step 3: Deploy Foundation (3 min)
+## Step 3: Validate the Lab Surface
 
 ```bash
-source config/powerstore.env
-make deploy-foundation
+make validate-vsphere-lab
 ```
 
-This creates:
-- PowerStore volumes for VMFS datastores
-- vSphere datacenter, cluster, resource pools, and folders
-- VMFS datastores mapped to PowerStore volumes
+This checks DNS, NTP reachability where available, and the vCenter HTTPS endpoint for the minimal lab surface.
 
-## Step 4: Build Templates (5 min)
+## Step 4: Build or Select a Linux Template
 
 ```bash
 make build-template-ubuntu
 ```
 
-Packer builds an Ubuntu 24.04 template with VMware Tools, stores it in vCenter.
+Packer builds an Ubuntu 24.04 template with VMware Tools and stores it in vCenter. If the lab already has a known-good template, update `terraform/stacks/03-workloads/terraform.tfvars` to reference that template instead.
 
-## Step 5: Deploy Three-Tier App (4 min)
+The Ubuntu template runs a narrow CIS-oriented hardening hook during the Packer build. Validate that hook before building:
 
 ```bash
-make deploy-three-tier
+make validate-ubuntu-2404-cis-template
 ```
 
-This deploys:
-- **Web VM**: nginx serving the reference landing page
-- **App VM**: Flask API showing infrastructure details
-- **DB VM**: PostgreSQL with sample data on PowerStore storage
+See [Ubuntu 24.04 CIS Template Hook](ubuntu-2404-cis-template.md) for the controls, operator variables, and Terraform/Ansible handoff.
 
-## Step 6: Verify
+## Step 5: Validate the First Build Contract
 
-Open a browser to the web VM IP — you'll see the pdgeek.io reference architecture landing page.
+```bash
+make validate-higher-ed-baseline
+```
+
+This validates the higher-ed catalog item, Terraform workload stack, Ansible playbook syntax, and Terraform-to-Ansible inventory handoff.
+
+## Step 6: Deploy Higher-Ed Small Linux
+
+```bash
+make setup-tags
+make deploy-higher-ed-baseline
+```
+
+Terraform creates the VM and applies vSphere tags. During the same `terraform apply`, Terraform renders `config/generated/higher-ed-hosts.yml` and runs `ansible/playbooks/higher-ed-linux-baseline.yml`.
+
+## Step 7: Verify
+
+Check the generated inventory and the VM metadata evidence:
+
+```bash
+terraform -chdir=terraform/stacks/03-workloads output vm_inventory
+cat config/generated/higher-ed-hosts.yml
+```
+
+On the guest, the baseline writes `/etc/pdgeek/higher-ed-baseline.yml`.
 
 ## What's Next?
 
 - Run `make demo` for the interactive self-service menu
 - Run `make portal` for the web-based self-service portal
 - Explore `self-service/catalog/` to customize VM sizes
+- Extend `self-service/catalog/higher-ed-small-linux.yml` before adding broader customer-facing builds
 - Check `docs/architecture.md` for the full design document
