@@ -20,6 +20,9 @@ run_check() {
 
 echo "==> Validating VMware higher-ed baseline MVP"
 
+echo "==> Installing Ansible collections"
+ansible-galaxy collection install -r ansible/requirements.yml >/dev/null
+
 run_check "vSphere VM Terraform module" \
     bash -c 'terraform -chdir=terraform/modules/vsphere-vm init -backend=false -input=false -no-color >/dev/null && terraform -chdir=terraform/modules/vsphere-vm validate -no-color'
 
