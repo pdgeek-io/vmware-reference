@@ -1,4 +1,4 @@
-.PHONY: init build-templates build-template-ubuntu deploy-workloads deploy-higher-ed-baseline setup-tags validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template destroy help
+.PHONY: init build-templates build-template-ubuntu build-template-windows-server-2025 deploy-workloads deploy-higher-ed-baseline setup-tags validate validate-vsphere-lab validate-higher-ed-baseline validate-ubuntu-2404-cis-template validate-windows-server-2025-template destroy help
 
 SHELL := /bin/bash
 CONFIG_DIR := config
@@ -28,6 +28,13 @@ build-template-ubuntu: ## Build Ubuntu 24.04 template
 		-var-file="packer/config/common.pkrvars.hcl" \
 		$(PACKER_DIR)/linux/ubuntu-2404/
 
+build-template-windows-server-2025: ## Build Windows Server 2025 template scaffold (feature branch only)
+	@echo "==> Building Windows Server 2025 template scaffold..."
+	packer build -force \
+		-var-file="packer/config/vsphere.pkrvars.hcl" \
+		-var-file="packer/config/windows-server-2025.pkrvars.hcl" \
+		$(PACKER_DIR)/windows/windows-server-2025/
+
 deploy-workloads: ## Deploy VMs from terraform/stacks/03-workloads
 	@echo "==> Deploying workload VMs..."
 	terraform -chdir=$(TERRAFORM_DIR)/03-workloads apply -auto-approve
@@ -52,6 +59,9 @@ validate-higher-ed-baseline: ## Validate first higher-ed common infrastructure s
 
 validate-ubuntu-2404-cis-template: ## Validate Ubuntu 24.04 Packer CIS baseline hook
 	@bash tests/scripts/validate-ubuntu-2404-cis-template.sh
+
+validate-windows-server-2025-template: ## Validate Windows Server 2025 Packer scaffold syntax
+	@bash tests/scripts/validate-windows-server-2025-template.sh
 
 destroy: ## Destroy the baseline workload stack
 	@echo "==> WARNING: This will destroy all deployed VMs in terraform/stacks/03-workloads."

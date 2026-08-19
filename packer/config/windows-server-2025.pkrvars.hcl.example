@@ -1,0 +1,21 @@
+# Copy to windows-server-2025.pkrvars.hcl and fill in local values.
+# Do not commit the copied file; *.pkrvars.hcl is ignored.
+
+# Local ISO paths are passed as file URLs. Example for the locally provided ISO:
+# windows_iso_url = "file:///Users/levioister/Downloads/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
+windows_iso_url      = "file:///absolute/path/to/windows-server-2025.iso"
+windows_iso_checksum = "sha256:CHANGE_ME"
+
+windows_image_name = "Windows Server 2025 SERVERSTANDARDCORE"
+
+# The ESXi-hosted VMware Tools ISO is attached as the second CD-ROM.
+vmware_tools_iso_path = "[] /usr/lib/vmware/isoimages/windows.iso"
+
+winrm_username = "Administrator"
+
+# Avoid XML-reserved characters (<, >, &) because this bootstrap password is
+# injected into Autounattend.xml during Windows setup.
+winrm_password = "CHANGE_ME"
+
+# Restrict this to the Packer runner IP/CIDR during real validation.
+winrm_allowed_remote_addresses = "Any"
