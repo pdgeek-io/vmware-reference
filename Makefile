@@ -41,7 +41,7 @@ setup-tags: ## Initialize baseline vSphere tag categories and values
 	@echo "==> Setting up baseline vSphere tags..."
 	pwsh -File scripts/setup-vsphere-tags.ps1
 
-validate: ## Validate the near-term baseline
+validate: ## Validate the supported baseline
 	@bash tests/scripts/validate-all.sh
 
 validate-vsphere-lab: ## Validate vSphere lab readiness for the smallest API lab
