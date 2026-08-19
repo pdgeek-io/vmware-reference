@@ -10,7 +10,7 @@
       department: "{{ department | default('Research') }}"
       cost_center: "{{ cost_center | default('RC-1000') }}"
       project: "{{ project | default('Shared-Research-Compute') }}"
-      environment: "{{ environment | default('Development') }}"
+      environment: "{{ vm_environment | default('Development') }}"
       owner: "{{ owner | default('research-it@example.edu') }}"
       application: "{{ application | default('Shared-Linux-Service') }}"
       app_owner: "{{ app_owner | default('research-it@example.edu') }}"
@@ -24,6 +24,7 @@
       app_hook_dir: /opt/pdgeek/hooks.d
     app_hook_commands: "{{ app_deploy_hooks | default([]) }}"
     validation_tcp_ports: "{{ tcp_validation_ports | default([22]) }}"
+    higher_ed_manage_packages: true
 
   roles:
     - role: common
@@ -36,7 +37,9 @@
           - bind-utils
           - nc
         state: present
-      when: ansible_os_family == "RedHat"
+      when:
+        - higher_ed_manage_packages | bool
+        - ansible_facts.os_family == "RedHat"
 
     - name: Install baseline validation packages on Debian
       ansible.builtin.package:
@@ -44,7 +47,9 @@
           - dnsutils
           - netcat-openbsd
         state: present
-      when: ansible_os_family == "Debian"
+      when:
+        - higher_ed_manage_packages | bool
+        - ansible_facts.os_family == "Debian"
 
     - name: Create platform metadata directory
       ansible.builtin.file:

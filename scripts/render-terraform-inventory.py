@@ -53,7 +53,7 @@ def main() -> int:
             "department": chargeback.get("department", ""),
             "cost_center": chargeback.get("cost_center", ""),
             "project": chargeback.get("project", ""),
-            "environment": chargeback.get("environment", ""),
+            "vm_environment": chargeback.get("environment", ""),
             "application": chargeback.get("application", ""),
             "app_owner": chargeback.get("app_owner", chargeback.get("owner", "")),
             "technical_owner": chargeback.get("technical_owner", ""),

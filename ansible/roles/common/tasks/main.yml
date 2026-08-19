@@ -20,17 +20,26 @@
       - net-tools
       - open-vm-tools
     state: present
+  when: common_manage_packages | default(true) | bool
 
-- name: Enable and start chronyd
+- name: Enable and start chronyd on RedHat
   ansible.builtin.service:
     name: chronyd
     state: started
     enabled: true
+  when: ansible_facts.os_family == "RedHat"
+
+- name: Enable and start systemd-timesyncd on Debian
+  ansible.builtin.service:
+    name: systemd-timesyncd
+    state: started
+    enabled: true
+  when: ansible_facts.os_family == "Debian"
 
 - name: Configure firewall (allow SSH)
   ansible.posix.firewalld:
     service: ssh
     permanent: true
     state: enabled
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts.os_family == "RedHat"
   notify: reload firewalld
