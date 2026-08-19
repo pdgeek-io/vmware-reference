@@ -67,13 +67,13 @@ source "vsphere-iso" "windows-server-2025" {
 
   floppy_label = "PACKERDATA"
   floppy_content = {
-    "Autounattend.xml" = templatefile("${path.root}/answer/Autounattend.xml.pkrtpl", {
+    "Autounattend.xml" = templatefile(abspath("${path.root}/answer/Autounattend.xml.pkrtpl"), {
       windows_image_name             = var.windows_image_name
       winrm_username                 = var.winrm_username
       winrm_password                 = var.winrm_password
       winrm_allowed_remote_addresses = var.winrm_allowed_remote_addresses
     })
-    "enable-winrm.ps1" = templatefile("${path.root}/scripts/enable-winrm.ps1", {
+    "enable-winrm.ps1" = templatefile(abspath("${path.root}/scripts/enable-winrm.ps1"), {
       winrm_allowed_remote_addresses = var.winrm_allowed_remote_addresses
     })
   }
@@ -106,7 +106,7 @@ build {
       "VMWARE_TOOLS_INSTALLER_URL=${var.vmware_tools_installer_url}",
     ]
     scripts = [
-      "${path.root}/scripts/install-vmware-tools.ps1",
+      abspath("${path.root}/scripts/install-vmware-tools.ps1"),
     ]
   }
 
@@ -116,13 +116,13 @@ build {
 
   provisioner "powershell" {
     scripts = [
-      "${path.root}/scripts/cleanup-template.ps1",
+      abspath("${path.root}/scripts/cleanup-template.ps1"),
     ]
   }
 
   provisioner "powershell" {
     scripts = [
-      "${path.root}/scripts/sysprep-template.ps1",
+      abspath("${path.root}/scripts/sysprep-template.ps1"),
     ]
   }
 }
