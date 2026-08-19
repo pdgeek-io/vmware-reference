@@ -3,6 +3,7 @@ param(
     [string]$WindowsIsoVspherePath = $env:WINDOWS_SERVER_2025_ISO_VSPHERE_PATH,
     [string]$ExpectedIsoSha256 = $(if ($env:WINDOWS_SERVER_2025_ISO_SHA256) { $env:WINDOWS_SERVER_2025_ISO_SHA256 } else { 'cf96e924b4e7551169e09ef2a42d81340cdef11eaadf4bd4ac7bf1cdad5178a4' }),
     [string]$ESXiHost = $env:ESXI_HOST,
+    [string]$ESXiSshHost = $(if ($env:ESXI_SSH_HOST) { $env:ESXI_SSH_HOST } else { $env:ESXI_HOST }),
     [string]$GuestOsType = $(if ($env:WINDOWS_SERVER_2025_GUEST_OS_TYPE) { $env:WINDOWS_SERVER_2025_GUEST_OS_TYPE } else { 'windows2022srvNext_64Guest' }),
     [string]$FallbackGuestOsType = $(if ($env:WINDOWS_SERVER_2025_FALLBACK_GUEST_OS_TYPE) { $env:WINDOWS_SERVER_2025_FALLBACK_GUEST_OS_TYPE } else { 'windows2019srvNext_64Guest' }),
     [string]$ProductLockerToolsIso = $(if ($env:VMWARE_TOOLS_PRODUCTLOCKER_ISO) { $env:VMWARE_TOOLS_PRODUCTLOCKER_ISO } else { '/usr/lib/vmware/isoimages/windows.iso' })
@@ -26,7 +27,7 @@ function Write-Check {
     }
 }
 
-function Test-VsphereDatastoreFile {
+function Split-VsphereDatastorePath {
     param(
         [string]$VspherePath
     )
@@ -38,8 +39,25 @@ function Test-VsphereDatastoreFile {
         }
     }
 
-    $datastoreName = $Matches.datastore
-    $relativePath = $Matches.relative.TrimStart('/')
+    return @{
+        Passed = $true
+        Datastore = $Matches.datastore
+        RelativePath = $Matches.relative.TrimStart('/')
+    }
+}
+
+function Test-VsphereDatastoreFileWithPowerCli {
+    param(
+        [string]$VspherePath
+    )
+
+    $pathParts = Split-VsphereDatastorePath -VspherePath $VspherePath
+    if (-not $pathParts.Passed) {
+        return $pathParts
+    }
+
+    $datastoreName = $pathParts.Datastore
+    $relativePath = $pathParts.RelativePath
     $fileName = Split-Path -Path $relativePath -Leaf
     $folder = Split-Path -Path $relativePath -Parent
     $searchRoot = if ([string]::IsNullOrWhiteSpace($folder)) {
@@ -57,6 +75,53 @@ function Test-VsphereDatastoreFile {
 
     return @{
         Passed = [bool]$found
+        Detail = $VspherePath
+    }
+}
+
+function Test-CommandAvailable {
+    param(
+        [string]$Name
+    )
+
+    return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
+}
+
+function Test-GovcConfigured {
+    return (($env:GOVC_URL -and $env:GOVC_USERNAME -and $env:GOVC_PASSWORD) -or
+        ($env:VSPHERE_SERVER -and $env:VSPHERE_USER -and $env:VSPHERE_PASSWORD))
+}
+
+function Set-GovcEnvironmentFromVsphere {
+    if (-not $env:GOVC_URL -and $env:VSPHERE_SERVER) {
+        $env:GOVC_URL = $env:VSPHERE_SERVER
+    }
+    if (-not $env:GOVC_USERNAME -and $env:VSPHERE_USER) {
+        $env:GOVC_USERNAME = $env:VSPHERE_USER
+    }
+    if (-not $env:GOVC_PASSWORD -and $env:VSPHERE_PASSWORD) {
+        $env:GOVC_PASSWORD = $env:VSPHERE_PASSWORD
+    }
+    if (-not $env:GOVC_INSECURE) {
+        $env:GOVC_INSECURE = 'true'
+    }
+}
+
+function Test-VsphereDatastoreFileWithGovc {
+    param(
+        [string]$VspherePath
+    )
+
+    $pathParts = Split-VsphereDatastorePath -VspherePath $VspherePath
+    if (-not $pathParts.Passed) {
+        return $pathParts
+    }
+
+    Set-GovcEnvironmentFromVsphere
+    $govcResult = & govc datastore.ls -ds $pathParts.Datastore $pathParts.RelativePath 2>&1
+
+    return @{
+        Passed = ($LASTEXITCODE -eq 0 -and (($govcResult -join "`n").Trim().Length -gt 0))
         Detail = $VspherePath
     }
 }
@@ -87,17 +152,30 @@ Write-Host '         Windows Server 2025 SERVERSTANDARD'
 Write-Host '         Windows Server 2025 SERVERDATACENTERCORE'
 Write-Host '         Windows Server 2025 SERVERDATACENTER'
 
-if (-not [string]::IsNullOrWhiteSpace($ESXiHost)) {
-    $sshResult = & ssh $ESXiHost "test -f '$ProductLockerToolsIso' && echo present || echo missing" 2>&1
-    Write-Check 'VMware Tools productLocker ISO' ($LASTEXITCODE -eq 0 -and ($sshResult -join "`n") -match 'present') "${ESXiHost}:${ProductLockerToolsIso}"
+if (-not [string]::IsNullOrWhiteSpace($ESXiSshHost)) {
+    $sshResult = & ssh $ESXiSshHost "test -f '$ProductLockerToolsIso' && echo present || echo missing" 2>&1
+    Write-Check 'VMware Tools productLocker ISO' ($LASTEXITCODE -eq 0 -and ($sshResult -join "`n") -match 'present') "${ESXiSshHost}:${ProductLockerToolsIso}"
 } else {
-    Write-Host '  [INFO] VMware Tools productLocker ISO check skipped; set ESXI_HOST to check /usr/lib/vmware/isoimages/windows.iso over SSH.'
+    Write-Host '  [INFO] VMware Tools productLocker ISO check skipped; set ESXI_SSH_HOST to check /usr/lib/vmware/isoimages/windows.iso over SSH.'
 }
 
-$canConnectVsphere = $env:VSPHERE_SERVER -and $env:VSPHERE_USER -and $env:VSPHERE_PASSWORD
+$hasVsphereCredentials = $env:VSPHERE_SERVER -and $env:VSPHERE_USER -and $env:VSPHERE_PASSWORD
+$hasPowerCli = [bool](Get-Module -ListAvailable -Name VMware.PowerCLI)
+$canConnectVsphere = $hasVsphereCredentials -or (Test-GovcConfigured)
 if ($canConnectVsphere) {
-    if (-not (Get-Module -ListAvailable -Name VMware.PowerCLI)) {
-        Write-Check 'vSphere checks' $false 'VMware.PowerCLI is not installed.'
+    if (-not ($hasPowerCli -and $hasVsphereCredentials)) {
+        if ($WindowsIsoVspherePath -match '^\[[^\]]+\]\s*.+$') {
+            if (Test-CommandAvailable -Name 'govc') {
+                $isoResult = Test-VsphereDatastoreFileWithGovc -VspherePath $WindowsIsoVspherePath
+                Write-Check 'Windows datastore ISO path' $isoResult.Passed $isoResult.Detail
+            } else {
+                Write-Check 'Windows datastore ISO path' $false 'VMware.PowerCLI is not installed and govc is not available.'
+            }
+        } elseif (-not [string]::IsNullOrWhiteSpace($WindowsIsoVspherePath)) {
+            Write-Host '  [INFO] Windows ISO path does not use datastore syntax. For content-library paths, verify with govc library.ls before building.'
+        }
+
+        Write-Host '  [INFO] vSphere guest OS descriptor query skipped; VMware.PowerCLI with VSPHERE_* credentials is not available.'
     } else {
         Import-Module VMware.PowerCLI -ErrorAction Stop
         Set-PowerCLIConfiguration -Scope User -ParticipateInCEIP $false -Confirm:$false | Out-Null
@@ -105,7 +183,7 @@ if ($canConnectVsphere) {
         $server = Connect-VIServer -Server $env:VSPHERE_SERVER -User $env:VSPHERE_USER -Password $env:VSPHERE_PASSWORD
         try {
             if ($WindowsIsoVspherePath -match '^\[[^\]]+\]\s*.+$') {
-                $isoResult = Test-VsphereDatastoreFile -VspherePath $WindowsIsoVspherePath
+                $isoResult = Test-VsphereDatastoreFileWithPowerCli -VspherePath $WindowsIsoVspherePath
                 Write-Check 'Windows datastore ISO path' $isoResult.Passed $isoResult.Detail
             } elseif (-not [string]::IsNullOrWhiteSpace($WindowsIsoVspherePath)) {
                 Write-Host '  [INFO] Windows ISO path does not use datastore syntax. For content-library paths, verify with govc library.ls before building.'
@@ -135,9 +213,9 @@ if ($canConnectVsphere) {
     }
 } else {
     if (-not [string]::IsNullOrWhiteSpace($WindowsIsoVspherePath)) {
-        Write-Check 'Windows datastore ISO path' $false 'Set VSPHERE_SERVER, VSPHERE_USER, and VSPHERE_PASSWORD so preflight can verify the datastore ISO path.'
+        Write-Check 'Windows datastore ISO path' $false 'Set GOVC_URL, GOVC_USERNAME, and GOVC_PASSWORD or VSPHERE_SERVER, VSPHERE_USER, and VSPHERE_PASSWORD so preflight can verify the datastore ISO path.'
     } else {
-        Write-Host '  [INFO] vSphere checks skipped; set VSPHERE_SERVER, VSPHERE_USER, VSPHERE_PASSWORD, and ESXI_HOST.'
+        Write-Host '  [INFO] vSphere checks skipped; set GOVC_* or VSPHERE_* credentials and ESXI_HOST.'
     }
     Write-Host "  [INFO] Official Windows Server 2025 guest ID to verify: $GuestOsType; fallback to validate if absent: $FallbackGuestOsType."
 }

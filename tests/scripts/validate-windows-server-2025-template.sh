@@ -54,6 +54,8 @@ grep -q 'Sysprep.exe' "${SYSPREP_SCRIPT}"
 grep -q 'windows2022srvNext_64Guest' "${PREFLIGHT_SCRIPT}"
 grep -q 'WINDOWS_SERVER_2025_ISO_VSPHERE_PATH' "${PREFLIGHT_SCRIPT}"
 grep -q 'WINDOWS_SERVER_2025_LOCAL_ISO_PATH' "${PREFLIGHT_SCRIPT}"
+grep -q 'ESXI_SSH_HOST' "${PREFLIGHT_SCRIPT}"
+grep -q 'govc datastore.ls' "${PREFLIGHT_SCRIPT}"
 grep -q '/usr/lib/vmware/isoimages/windows.iso' "${PREFLIGHT_SCRIPT}"
 
 if command -v pwsh >/dev/null 2>&1; then

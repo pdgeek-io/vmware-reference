@@ -80,6 +80,7 @@ export VSPHERE_SERVER="vcenter.lab.example.com"
 export VSPHERE_USER="administrator@vsphere.local"
 export VSPHERE_PASSWORD="..."
 export ESXI_HOST="esx01.lab.example.com"
+export ESXI_SSH_HOST="root@10.100.20.71"
 make preflight-windows-server-2025-template
 ```
 
@@ -87,15 +88,18 @@ For a manual workstation-only lab build:
 
 ```bash
 export WINDOWS_SERVER_2025_LOCAL_ISO_PATH="/Users/levioister/Downloads/SWDVD9_WinSrvSTDCORE2025_24H2.16_64Bit_English_DC_STD_MLF_RTMUpdJan26_X24-26760.ISO"
-export ESXI_HOST="root@esx01.lab.example.com"
+export ESXI_SSH_HOST="root@10.100.20.71"
 make preflight-windows-server-2025-template
 ```
 
 The preflight script verifies the local ISO checksum when a local ISO is used,
-verifies bracketed datastore ISO paths through PowerCLI when vSphere credentials
-are present, checks the ESXi productLocker VMware Tools ISO over SSH when
-`ESXI_HOST` is set, and queries the ESXi guest OS descriptor list when both
-vSphere credentials and `ESXI_HOST` are set.
+verifies bracketed datastore ISO paths through PowerCLI when PowerCLI is
+present, falls back to `govc datastore.ls` when PowerCLI is absent, checks the
+ESXi productLocker VMware Tools ISO over SSH when `ESXI_SSH_HOST` is set, and
+queries the ESXi guest OS descriptor list when both vSphere credentials,
+PowerCLI, and `ESXI_HOST` are set. `ESXI_HOST` should match the vSphere
+inventory host used for guest OS checks; `ESXI_SSH_HOST` should be the SSH
+target accepted by the ESXi host, such as `root@10.100.20.71`.
 
 For content library ISO paths, verify the item before building:
 
