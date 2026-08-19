@@ -72,6 +72,7 @@ EOF
 augenrules --load || true
 
 echo "==> Applying password quality defaults"
+install -d -m 0755 /etc/security/pwquality.conf.d
 cat >/etc/security/pwquality.conf.d/50-pdgeek-cis.conf <<'EOF'
 minlen = 14
 minclass = 4
