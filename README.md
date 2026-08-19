@@ -1,4 +1,4 @@
-# PD Geek VMware Baseline
+# VMware Baseline
 
 Production-ready VMware automation baseline for a small higher-ed service VM.
 
